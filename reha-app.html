@@ -157,7 +157,7 @@ mark{background:#fef08a;border-radius:2px;padding:0 2px}
 .modal-btn.secondary{background:var(--bg);color:var(--text-m);border:1px solid var(--border);margin-top:.5rem}
 
 /* ── IMPORT AREA ─────────────────────────────────────── */
-.import-drop{border:2px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin:.75rem 0}
+.import-drop{display:block;border:2px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin:.75rem 0}
 .import-drop:hover,.import-drop.drag{border-color:var(--primary);background:var(--primary-lt)}
 .import-drop input{display:none}
 .import-drop .di{font-size:2.2rem;margin-bottom:.5rem}
@@ -212,12 +212,12 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
     <div class="handle"></div>
     <div class="modal-title">📥 Therapiekarte importieren</div>
     <p style="font-size:.85rem;color:var(--text-m)">Lade eine JSON-Datei deiner neuen Therapiekarte. Alles bleibt lokal.</p>
-    <label class="import-drop" id="drop-zone" for="file-in">
+    <div class="import-drop" id="drop-zone" onclick="document.getElementById('file-in').click()">
       <div class="di">📄</div>
       <strong>JSON-Datei auswählen</strong>
       <p>oder hierher ziehen</p>
-      <input type="file" id="file-in" accept=".json,application/json" onchange="importFile(this)">
-    </label>
+    </div>
+    <input type="file" id="file-in" accept=".json,application/json" onchange="importFile(this)" style="display:none">
     <details>
       <summary style="cursor:pointer;font-size:.82rem;color:var(--text-m);padding:.35rem 0">JSON-Format anzeigen</summary>
       <pre class="json-ex">{
