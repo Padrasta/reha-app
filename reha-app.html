@@ -521,6 +521,11 @@ function weekDays(start) {
 
 function toMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
 
+function addMinutes(t, mins) {
+  const total = toMin(t) + mins;
+  return `${String(Math.floor(total/60)%24).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
+
 function isPast(date, time) {
   if (date !== todayStr()) return false;
   const now = new Date();
@@ -644,13 +649,19 @@ function renderCard(ev, date) {
     : ev.reminder ? '' : '<span class="badge in">🏢 Indoor</span>';
   const data = encodeURIComponent(JSON.stringify(ev));
 
+  const endTime = ev.duration ? addMinutes(ev.time, ev.duration) : null;
+
   return `<div class="ev ${cls}${past?' past':''}" onclick="showDetail('${data}')">
-    <div class="ev-time">${esc(ev.time)}</div>
+    <div class="ev-time">
+      ${esc(ev.time)}
+      ${endTime ? `<div class="end">${esc(endTime)}</div>` : ''}
+    </div>
     <div class="ev-body">
       <div class="ev-title">${esc(ev.title)}</div>
       <div class="ev-meta">
         ${ev.therapist ? `<span>👤 ${esc(ev.therapist)}</span>` : ''}
         ${ev.room ? `<span>📍 ${esc(ev.room)}</span>` : ''}
+        ${ev.duration ? `<span>⏱ ${ev.duration} Min</span>` : ''}
         ${badge}
       </div>
       ${ev.hint ? `<div class="ev-hint">${esc(ev.hint)}</div>` : ''}
@@ -818,7 +829,9 @@ function showDetail(data) {
   document.getElementById('detail-body').innerHTML = `
     <div class="modal-title">${esc(ev.title)}</div>
     <div>
-      <div class="detail-row"><span class="lbl">🕐 Uhrzeit</span><span class="val">${esc(ev.time)} Uhr</span></div>
+      <div class="detail-row"><span class="lbl">🕐 Beginn</span><span class="val">${esc(ev.time)} Uhr</span></div>
+      ${ev.duration ? `<div class="detail-row"><span class="lbl">🏁 Ende</span><span class="val">${esc(addMinutes(ev.time, ev.duration))} Uhr</span></div>` : ''}
+      ${ev.duration ? `<div class="detail-row"><span class="lbl">⏱ Dauer</span><span class="val">${ev.duration} Minuten</span></div>` : ''}
       ${ev.therapist?`<div class="detail-row"><span class="lbl">👤 Therapeut</span><span class="val">${esc(ev.therapist)}</span></div>`:''}
       ${ev.room?`<div class="detail-row"><span class="lbl">📍 Ort / Raum</span><span class="val">${esc(ev.room)}</span></div>`:''}
       <div class="detail-row"><span class="lbl">Typ</span>
