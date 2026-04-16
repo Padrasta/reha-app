@@ -156,6 +156,24 @@ mark{background:#fef08a;border-radius:2px;padding:0 2px}
 .modal-btn{margin-top:1.25rem;width:100%;padding:.7rem;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer}
 .modal-btn.secondary{background:var(--bg);color:var(--text-m);border:1px solid var(--border);margin-top:.5rem}
 
+/* ── FORMULAR ────────────────────────────────────────── */
+.form-field{margin-bottom:1rem}
+.form-field label{display:block;font-size:.8rem;font-weight:600;color:var(--text-m);margin-bottom:.35rem}
+.form-field input[type="text"],
+.form-field input[type="date"],
+.form-field input[type="time"],
+.form-field textarea{width:100%;padding:.6rem .8rem;border:1px solid var(--border);border-radius:8px;font-size:.92rem;font-family:inherit;color:var(--text);background:var(--surface2);outline:none;transition:border-color .15s}
+.form-field input:focus,.form-field textarea:focus{border-color:var(--primary);background:#fff}
+.form-field textarea{resize:vertical;min-height:60px}
+.type-radios{display:flex;gap:.5rem;flex-wrap:wrap}
+.type-radio{flex:1;min-width:80px}
+.type-radio input{display:none}
+.type-radio label{display:flex;align-items:center;justify-content:center;gap:.3rem;padding:.5rem .4rem;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text-m);transition:all .15s;text-align:center}
+.type-radio input:checked + label{border-color:var(--primary);background:var(--primary-lt);color:var(--primary)}
+.type-radio.out input:checked + label{border-color:var(--outdoor);background:var(--outdoor-bg);color:var(--outdoor)}
+.type-radio.rem input:checked + label{border-color:var(--reminder);background:var(--reminder-bg);color:var(--reminder)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+
 /* ── IMPORT AREA ─────────────────────────────────────── */
 .import-drop{display:block;border:2px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin:.75rem 0}
 .import-drop:hover,.import-drop.drag{border-color:var(--primary);background:var(--primary-lt)}
@@ -187,6 +205,7 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
   <div class="hdr-actions">
     <button class="icon-btn" onclick="toggleSearch()" title="Suche">🔍</button>
     <button class="icon-btn" id="notif-btn" onclick="requestNotifs()" title="Erinnerungen">🔔</button>
+    <button class="icon-btn" onclick="openAddAppt()" title="Termin hinzufügen">＋</button>
     <button class="icon-btn" onclick="openImport()" title="Therapiekarte importieren">📥</button>
   </div>
 </header>
@@ -203,6 +222,66 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
     <div class="handle"></div>
     <div id="detail-body"></div>
     <button class="modal-btn" onclick="closeModal('detail-overlay')">Schließen</button>
+  </div>
+</div>
+
+<!-- Termin hinzufügen Modal -->
+<div class="overlay hidden" id="add-overlay" onclick="closeModal('add-overlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <div class="modal-title">＋ Termin hinzufügen</div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label for="f-date">Datum *</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="form-field">
+        <label for="f-time">Uhrzeit *</label>
+        <input type="time" id="f-time">
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label for="f-title">Titel *</label>
+      <input type="text" id="f-title" placeholder="z. B. Einzelpsychotherapie">
+    </div>
+
+    <div class="form-field">
+      <label for="f-therapist">Therapeut / Person</label>
+      <input type="text" id="f-therapist" placeholder="z. B. M. Ortiz">
+    </div>
+
+    <div class="form-field">
+      <label for="f-room">Ort / Raum</label>
+      <input type="text" id="f-room" placeholder="z. B. 421 EG oder Therapie am Park">
+    </div>
+
+    <div class="form-field">
+      <label>Typ</label>
+      <div class="type-radios">
+        <div class="type-radio in">
+          <input type="radio" name="f-type" id="ft-indoor" value="indoor" checked>
+          <label for="ft-indoor">🏢 Indoor</label>
+        </div>
+        <div class="type-radio out">
+          <input type="radio" name="f-type" id="ft-outdoor" value="outdoor">
+          <label for="ft-outdoor">🌿 Outdoor</label>
+        </div>
+        <div class="type-radio rem">
+          <input type="radio" name="f-type" id="ft-reminder" value="reminder">
+          <label for="ft-reminder">⚠️ Erinnerung</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label for="f-hint">Hinweis</label>
+      <input type="text" id="f-hint" placeholder="z. B. Sportkleidung mitbringen">
+    </div>
+
+    <button class="modal-btn" onclick="saveAppt()">Termin speichern</button>
+    <button class="modal-btn secondary" onclick="closeModal('add-overlay')">Abbrechen</button>
   </div>
 </div>
 
@@ -791,6 +870,69 @@ function clearCard() {
   closeModal('import-overlay');
   render();
   toast('🗑️ Therapiekarte gelöscht');
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  TERMIN HINZUFÜGEN                                   ║
+// ╚══════════════════════════════════════════════════════╝
+
+function openAddAppt() {
+  // Datum vorausfüllen: aktuell angezeigte Tag
+  document.getElementById('f-date').value = S.date;
+  document.getElementById('f-time').value = '';
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-therapist').value = '';
+  document.getElementById('f-room').value = '';
+  document.getElementById('f-hint').value = '';
+  document.getElementById('ft-indoor').checked = true;
+  openModal('add-overlay');
+}
+
+function getMonday(dateStr) {
+  const d = parseDate(dateStr);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return dateStr(d);
+}
+
+function saveAppt() {
+  const date  = document.getElementById('f-date').value;
+  const time  = document.getElementById('f-time').value;
+  const title = document.getElementById('f-title').value.trim();
+
+  if (!date || !time || !title) {
+    toast('❌ Datum, Uhrzeit und Titel sind Pflichtfelder');
+    return;
+  }
+
+  const type = document.querySelector('input[name="f-type"]:checked').value;
+  const appt = {
+    date,
+    time,
+    title,
+    therapist: document.getElementById('f-therapist').value.trim(),
+    room:      document.getElementById('f-room').value.trim(),
+    outdoor:   type === 'outdoor',
+    reminder:  type === 'reminder' || undefined,
+    hint:      document.getElementById('f-hint').value.trim(),
+  };
+  if (!appt.reminder) delete appt.reminder;
+
+  // Karte anlegen falls noch keine vorhanden
+  if (!S.card) {
+    S.card = { week: getMonday(date), appointments: [] };
+  }
+
+  S.card.appointments.push(appt);
+  saveCard(S.card);
+  closeModal('add-overlay');
+  S.date = date;
+  S.view = 'day';
+  document.getElementById('btn-day').classList.add('active');
+  document.getElementById('btn-week').classList.remove('active');
+  render();
+  toast('✅ Termin gespeichert');
 }
 
 // Drag & Drop
