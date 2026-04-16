@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reha">
+<meta name="theme-color" content="#3d6b4f">
+<title>Reha – Klinik am Doniswald</title>
+<style>
+:root {
+  --bg:           #f4f1eb;
+  --surface:      #ffffff;
+  --surface2:     #faf8f4;
+  --primary:      #3d6b4f;
+  --primary-dk:   #2d5139;
+  --primary-lt:   #e8f0eb;
+  --outdoor:      #4a7c59;
+  --outdoor-bg:   #eaf4ec;
+  --indoor:       #4a6c8c;
+  --indoor-bg:    #eaf0f7;
+  --meal:         #8b6914;
+  --meal-bg:      #fef8e7;
+  --reminder:     #b05c1a;
+  --reminder-bg:  #fef3e2;
+  --text:         #2c2c2c;
+  --text-m:       #6b6b6b;
+  --text-l:       #9b9b9b;
+  --border:       #ddd9d0;
+  --border-l:     #eceae5;
+  --shadow:       0 2px 8px rgba(0,0,0,.08);
+  --shadow-md:    0 4px 16px rgba(0,0,0,.12);
+  --r:            12px;
+  --r-sm:         8px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:3rem}
+
+/* ── HEADER ──────────────────────────────────────────── */
+header{background:var(--primary);color:#fff;padding:.7rem 1rem;display:flex;align-items:center;gap:.6rem;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.logo{flex:1;font-size:1.05rem;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.logo small{display:block;font-size:.72rem;font-weight:400;opacity:.7;margin-top:.1rem}
+.view-toggle{display:flex;background:rgba(255,255,255,.15);border-radius:8px;padding:2px;gap:2px}
+.view-toggle button{background:none;border:none;color:rgba(255,255,255,.7);padding:.3rem .65rem;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;transition:all .15s}
+.view-toggle button.active{background:#fff;color:var(--primary)}
+.hdr-actions{display:flex;gap:.4rem}
+.icon-btn{background:rgba(255,255,255,.15);border:none;color:#fff;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:background .15s;position:relative}
+.icon-btn:hover{background:rgba(255,255,255,.28)}
+.icon-btn.on::after{content:'';position:absolute;top:5px;right:5px;width:8px;height:8px;background:#f87171;border-radius:50%;border:2px solid var(--primary)}
+
+/* ── SEARCH BAR ──────────────────────────────────────── */
+.search-bar{background:var(--primary-dk);padding:.6rem 1rem;display:none}
+.search-bar.open{display:block}
+.search-bar input{width:100%;padding:.55rem 1rem;border:none;border-radius:8px;font-size:.92rem;background:rgba(255,255,255,.15);color:#fff;outline:none}
+.search-bar input::placeholder{color:rgba(255,255,255,.45)}
+.search-bar input:focus{background:rgba(255,255,255,.22)}
+
+/* ── MAIN ────────────────────────────────────────────── */
+main{max-width:800px;margin:0 auto;padding:1rem}
+
+/* ── DATE NAV ────────────────────────────────────────── */
+.date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.date-nav button{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.35rem .75rem;cursor:pointer;font-size:.95rem;color:var(--text-m);transition:all .15s}
+.date-nav button:hover{background:var(--primary-lt);color:var(--primary);border-color:var(--primary)}
+.date-nav .cur{flex:1;text-align:center;font-size:1.05rem;font-weight:600}
+.date-nav .cur small{display:block;font-size:.75rem;font-weight:400;color:var(--text-m);margin-top:.1rem}
+.today-pill{display:inline-block;background:var(--primary);color:#fff;font-size:.65rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.1rem .45rem;border-radius:20px;margin-right:.35rem;vertical-align:middle}
+
+/* ── NOTIFICATION BANNER ─────────────────────────────── */
+.notif-banner{background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r-sm);padding:.65rem 1rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;font-size:.85rem;color:#78350f}
+.notif-banner button{margin-left:auto;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-weight:600;white-space:nowrap}
+
+/* ── EVENT CARDS ─────────────────────────────────────── */
+.timeline{display:flex;flex-direction:column;gap:.5rem}
+.ev{background:var(--surface);border-radius:var(--r);padding:.85rem 1rem;border-left:4px solid var(--border);box-shadow:var(--shadow);display:flex;gap:.75rem;cursor:pointer;transition:transform .1s,box-shadow .1s,opacity .2s}
+.ev:hover{transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.ev.meal{border-left-color:var(--meal);background:var(--meal-bg);cursor:default}
+.ev.meal:hover{transform:none;box-shadow:var(--shadow)}
+.ev.outdoor{border-left-color:var(--outdoor)}
+.ev.indoor{border-left-color:var(--indoor)}
+.ev.reminder{border-left-color:var(--reminder);background:var(--reminder-bg)}
+.ev.past{opacity:.45}
+.ev-time{min-width:50px;font-size:.85rem;font-weight:700;color:var(--text-m);padding-top:2px;line-height:1.5;flex-shrink:0}
+.ev-time .end{font-size:.72rem;font-weight:400}
+.ev-body{flex:1;min-width:0}
+.ev-title{font-size:.98rem;font-weight:600;line-height:1.35;margin-bottom:.3rem}
+.ev-meta{font-size:.78rem;color:var(--text-m);display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:.15rem;padding:.12rem .45rem;border-radius:20px;font-size:.68rem;font-weight:700;letter-spacing:.02em}
+.badge.out{background:var(--outdoor-bg);color:var(--outdoor)}
+.badge.in{background:var(--indoor-bg);color:var(--indoor)}
+.badge.meal{background:var(--meal-bg);color:var(--meal)}
+.ev-hint{margin-top:.35rem;font-size:.78rem;font-style:italic}
+.ev.outdoor .ev-hint{color:var(--outdoor)}
+.ev.indoor .ev-hint{color:var(--indoor)}
+.ev.reminder .ev-hint{color:var(--reminder)}
+.ev.meal .ev-hint{color:var(--meal)}
+
+/* ── FREE DAY ────────────────────────────────────────── */
+.free-day{background:var(--surface);border-radius:var(--r);padding:2.5rem 1rem;text-align:center;box-shadow:var(--shadow)}
+.free-day .icon{font-size:2.5rem;margin-bottom:.5rem}
+
+/* ── WEEK VIEW ───────────────────────────────────────── */
+.week-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:.5rem}
+.week-grid{display:grid;grid-template-columns:repeat(7,minmax(96px,1fr));gap:.4rem;min-width:680px}
+.week-day{background:var(--surface);border-radius:var(--r-sm);padding:.55rem;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .15s}
+.week-day:hover{box-shadow:var(--shadow-md)}
+.week-day.today{border:2px solid var(--primary)}
+.wd-name{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-l);margin-bottom:.25rem}
+.today .wd-name{color:var(--primary)}
+.wd-num{font-size:1rem;font-weight:700;margin-bottom:.4rem;line-height:1;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.today .wd-num{background:var(--primary);color:#fff;font-size:.85rem}
+.wpill{font-size:.68rem;padding:.2rem .35rem;border-radius:4px;margin-bottom:.2rem;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpill.meal{background:var(--meal-bg);color:var(--meal)}
+.wpill.out{background:var(--outdoor-bg);color:var(--outdoor)}
+.wpill.in{background:var(--indoor-bg);color:var(--indoor)}
+.wpill.rem{background:var(--reminder-bg);color:var(--reminder)}
+
+/* ── KNOWLEDGE ───────────────────────────────────────── */
+.know-section{margin-top:1.75rem}
+.know-header{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-l);margin-bottom:.75rem;padding:0 .1rem}
+.accordion{display:flex;flex-direction:column;gap:.4rem}
+.acc-item{background:var(--surface);border-radius:var(--r-sm);box-shadow:var(--shadow);overflow:hidden}
+.acc-trigger{width:100%;padding:.8rem 1rem;background:none;border:none;display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.9rem;font-weight:600;color:var(--text);text-align:left}
+.acc-trigger .cat{font-size:.65rem;font-weight:400;color:var(--text-l);margin-left:.1rem}
+.acc-trigger .chev{margin-left:auto;color:var(--text-l);transition:transform .2s;font-style:normal;font-size:.8rem}
+.acc-item.open .chev{transform:rotate(180deg)}
+.acc-body{display:none;padding:0 1rem 1rem}
+.acc-item.open .acc-body{display:block}
+.ke{padding:.5rem 0;border-bottom:1px solid var(--border-l);font-size:.85rem;line-height:1.6;color:var(--text-m)}
+.ke:last-child{border-bottom:none}
+.ke strong{display:block;color:var(--text);font-size:.88rem;margin-bottom:.1rem}
+mark{background:#fef08a;border-radius:2px;padding:0 2px}
+
+/* ── SEARCH RESULTS ──────────────────────────────────── */
+.sr-list{display:flex;flex-direction:column;gap:.45rem;margin-top:.5rem}
+.sr-item{background:var(--surface);border-radius:var(--r-sm);padding:.85rem 1rem;box-shadow:var(--shadow)}
+.sr-cat{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);margin-bottom:.35rem}
+.sr-title{font-weight:600;margin-bottom:.25rem}
+.sr-body{font-size:.82rem;color:var(--text-m);line-height:1.55}
+.sr-empty{text-align:center;padding:2rem 1rem;color:var(--text-m)}
+
+/* ── MODALS ──────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding:1rem}
+.overlay.hidden{display:none}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:1.25rem 1.5rem 1.5rem;width:100%;max-width:620px;max-height:82vh;overflow-y:auto;animation:slideUp .2s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.handle{width:38px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 1.25rem}
+.modal-title{font-size:1.15rem;font-weight:700;margin-bottom:.75rem}
+.detail-row{display:flex;gap:.75rem;padding:.45rem 0;border-bottom:1px solid var(--border-l);font-size:.9rem}
+.detail-row:last-child{border-bottom:none}
+.detail-row .lbl{min-width:88px;color:var(--text-m);font-weight:500;flex-shrink:0}
+.detail-row .val{font-weight:600;color:var(--text)}
+.modal-btn{margin-top:1.25rem;width:100%;padding:.7rem;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer}
+.modal-btn.secondary{background:var(--bg);color:var(--text-m);border:1px solid var(--border);margin-top:.5rem}
+
+/* ── IMPORT AREA ─────────────────────────────────────── */
+.import-drop{border:2px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin:.75rem 0}
+.import-drop:hover,.import-drop.drag{border-color:var(--primary);background:var(--primary-lt)}
+.import-drop input{display:none}
+.import-drop .di{font-size:2.2rem;margin-bottom:.5rem}
+.import-drop p{color:var(--text-m);font-size:.88rem;margin-top:.25rem}
+pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8px;overflow-x:auto;color:var(--text-m);margin-top:.5rem;text-align:left}
+
+/* ── TOAST ───────────────────────────────────────────── */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:#1f2937;color:#fff;padding:.6rem 1.1rem;border-radius:10px;font-size:.87rem;z-index:300;transition:transform .28s ease;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media(max-width:580px){
+  header{padding:.6rem .75rem}
+  main{padding:.75rem}
+  .date-nav .cur{font-size:.95rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🌲 Reha <small>Klinik am Doniswald</small></div>
+  <div class="view-toggle">
+    <button id="btn-day" class="active" onclick="setView('day')">Tag</button>
+    <button id="btn-week" onclick="setView('week')">Woche</button>
+  </div>
+  <div class="hdr-actions">
+    <button class="icon-btn" onclick="toggleSearch()" title="Suche">🔍</button>
+    <button class="icon-btn" id="notif-btn" onclick="requestNotifs()" title="Erinnerungen">🔔</button>
+    <button class="icon-btn" onclick="openImport()" title="Therapiekarte importieren">📥</button>
+  </div>
+</header>
+
+<div class="search-bar" id="search-bar">
+  <input type="text" id="search-input" placeholder="Suche: Rauchen · Outdoor · Nachtruhe · Hütte …" oninput="onSearch(this.value)">
+</div>
+
+<main id="app"></main>
+
+<!-- Detail Modal -->
+<div class="overlay hidden" id="detail-overlay" onclick="closeModal('detail-overlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <div id="detail-body"></div>
+    <button class="modal-btn" onclick="closeModal('detail-overlay')">Schließen</button>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="overlay hidden" id="import-overlay" onclick="closeModal('import-overlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <div class="modal-title">📥 Therapiekarte importieren</div>
+    <p style="font-size:.85rem;color:var(--text-m)">Lade eine JSON-Datei deiner neuen Therapiekarte. Alles bleibt lokal.</p>
+    <label class="import-drop" id="drop-zone" for="file-in">
+      <div class="di">📄</div>
+      <strong>JSON-Datei auswählen</strong>
+      <p>oder hierher ziehen</p>
+      <input type="file" id="file-in" accept=".json,application/json" onchange="importFile(this)">
+    </label>
+    <details>
+      <summary style="cursor:pointer;font-size:.82rem;color:var(--text-m);padding:.35rem 0">JSON-Format anzeigen</summary>
+      <pre class="json-ex">{
+  "week": "2026-04-20",
+  "appointments": [
+    {
+      "date": "2026-04-22",
+      "time": "09:00",
+      "title": "Einzelpsychotherapie",
+      "therapist": "M. Ortiz",
+      "room": "421 EG",
+      "outdoor": false,
+      "hint": ""
+    },
+    {
+      "date": "2026-04-22",
+      "time": "14:00",
+      "title": "Walk & Talk",
+      "therapist": "S. Klausmann",
+      "room": "Hütte am Wald",
+      "outdoor": true,
+      "hint": "Festes Schuhwerk, wetterfeste Kleidung"
+    }
+  ]
+}</pre>
+    </details>
+    <button class="modal-btn" onclick="closeModal('import-overlay')">Schließen</button>
+    <button class="modal-btn secondary" onclick="clearCard()">Therapiekarte löschen</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  DATEN                                               ║
+// ╚══════════════════════════════════════════════════════╝
+
+const MEALS = [
+  { meal:true, title:'Frühstück',  icon:'🥐', time:'07:30', end:'08:15',
+    hint:'Abwesenheit bitte im Speisesaal eintragen' },
+  { meal:true, title:'Mittagessen', icon:'🍽️', time:'11:45', end:'12:30',
+    hint:'Anschließend Mittagsruhe bis 13:30 Uhr' },
+  { meal:true, title:'Abendessen',  icon:'🥗', time:'17:30', end:'18:15',
+    hint:'Abwesenheit bitte im Speisesaal eintragen' },
+];
+
+// Keine Standardkarte – persönliche Daten werden nur per Import geladen.
+
+const KNOWLEDGE = {
+  hausordnung: [
+    { icon:'🌙', title:'Nachtruhe & Ruhezeiten', cat:'Hausordnung',
+      keys:'nachtruhe ruhe nacht schlaf ruhig stille',
+      items:[
+        { h:'Nachtruhe', t:'Ab 22:30 Uhr in der Klinik, auf den Gängen ab 23:00 Uhr. Bitte nachts keinen Aufzug benutzen.' },
+        { h:'Mittagsruhe', t:'Von 12:30 bis 13:30 Uhr. Rücksichtnahme erwünscht – bitte nicht telefonieren oder laut auf dem Flur sprechen.' },
+      ]},
+    { icon:'🚬', title:'Rauchen', cat:'Hausordnung',
+      keys:'rauchen raucher pavillon zigarette dampfen e-zigarette',
+      items:[
+        { h:'Erlaubter Bereich', t:'Rauchen nur im Pavillon des Kurparks oder im zugewiesenen Bereich im Wald.' },
+        { h:'Verboten', t:'In allen Gebäuden, auf Balkonen, auf dem Parkplatz und im Wald außerhalb des Pavillons. E-Zigaretten sind auf dem gesamten Klinikgelände nicht gestattet.' },
+      ]},
+    { icon:'🚫', title:'Alkohol & Drogen', cat:'Hausordnung',
+      keys:'alkohol drogen betäubungsmittel verboten kontrolle entlassung',
+      items:[
+        { h:'Verbot', t:'Alkohol- und Drogenkonsum ist während des stationären Aufenthalts nicht gestattet.' },
+        { h:'Kontrollen', t:'Mit unangekündigten Kontrollen muss gerechnet werden. Ein Verstoß kann zur sofortigen Entlassung führen.' },
+      ]},
+    { icon:'👥', title:'Besuche', cat:'Hausordnung',
+      keys:'besuch besucher cafeteria besuchen voranmelden anmelden',
+      items:[
+        { h:'Anmeldung', t:'Voranmeldung erforderlich (1 Tag vorher). Bitte beim Pflegepersonal melden.' },
+        { h:'Ort', t:'Besucher dürfen nur in der Cafeteria empfangen werden (Räume 403/405 EG, neben der Cafeteria) – nicht in den Patientenzimmern.' },
+        { h:'Öffnungszeiten Cafeteria', t:'Täglich 14:30–16:30 Uhr, außer samstags.' },
+      ]},
+    { icon:'🔌', title:'Elektrogeräte', cat:'Hausordnung',
+      keys:'elektrogeräte handy laptop fernseher wasserkocher bügeleisen heizung',
+      items:[
+        { h:'Erlaubt', t:'Handy, Smartphone, Laptop, Tablet, Föhn, Rasierer. Tassenwärmer mit Temperaturabschaltautomatik OK.' },
+        { h:'Verboten', t:'Wasserkocher, Bügeleisen, Heizlüfter, elektrische Decken, Toaster. Werden konfisziert.' },
+        { h:'Fernsehräume', t:'Raum 403 und 405 im EG, neben der Cafeteria.' },
+      ]},
+    { icon:'🍽️', title:'Mahlzeiten', cat:'Hausordnung',
+      keys:'mahlzeit essen frühstück mittagessen abendessen speisesaal abmelden',
+      items:[
+        { h:'Frühstück', t:'07:30 – 08:15 Uhr' },
+        { h:'Mittagessen', t:'11:45 – 12:30 Uhr' },
+        { h:'Abendessen', t:'17:30 – 18:15 Uhr' },
+        { h:'Abmeldung', t:'Bei Abwesenheit bitte in die Abmeldeliste im Speisesaal eintragen.' },
+        { h:'Mittagsruhe', t:'Anschließend an das Mittagessen bis 13:30 Uhr.' },
+      ]},
+    { icon:'🏢', title:'Öffnungszeiten Rezeption', cat:'Hausordnung',
+      keys:'rezeption öffnungszeiten schlüssel öffnung',
+      items:[
+        { h:'Mo – Do', t:'05:00 – 23:00 Uhr' },
+        { h:'Freitag', t:'08:00 – 16:00 Uhr' },
+        { h:'Schlüssel', t:'Zimmerschlüssel an der Rezeption. Verlust sofort melden.' },
+      ]},
+    { icon:'💊', title:'Therapiekarte & Medikamente', cat:'Hausordnung',
+      keys:'therapiekarte medikamente apotheke tauschen abholen freitag mittwoch rezept',
+      items:[
+        { h:'Therapiekarte tauschen', t:'Donnerstags, Raum 486 EG (Pflegestützpunkt). Alte Karte abgeben, neue für Folgewoche erhalten.' },
+        { h:'Medikamente abholen', t:'Freitag 16:00 – 17:00 Uhr im Stationszimmer.' },
+        { h:'Medikamentenbestellung', t:'Bis Mittwoch 18:00 Uhr in den Briefkasten beim Stationszimmer einwerfen.' },
+        { h:'Apotheke', t:'Nur Klinik-eigene Medikamente erlaubt. Mitgebrachte Medikamente bitte beim Pflegepersonal melden.' },
+      ]},
+    { icon:'🛏️', title:'Zimmer & Wäsche', cat:'Hausordnung',
+      keys:'zimmer reinigung sauber bettwäsche handtuch wäsche waschmaschine trockner',
+      items:[
+        { h:'Zimmerreinigung', t:'Wöchentlich (montags). Extra Reinigung gegen Gebühr an der Rezeption.' },
+        { h:'Bettwäsche', t:'Alle 14 Tage Wechsel. Handtücher auf Wunsch öfter.' },
+        { h:'Wäsche', t:'Waschmaschinen und Münztrockner in Raum 486 EG. Waschpulver an der Rezeption (kostenpflichtig).' },
+      ]},
+    { icon:'🚪', title:'Betreten & Verlassen', cat:'Hausordnung',
+      keys:'betreten verlassen ausgehen spaziergang beurlaubung ausgang nacht',
+      items:[
+        { h:'Eingänge', t:'Zwei Haupteingänge (Foyer), zugänglich 05:00 – 23:00 Uhr. Danach nur Feuernotausgänge (löst Alarm aus).' },
+        { h:'Kurzausflüge', t:'Pflegepersonal informieren, Abmeldeliste im Speisesaal eintragen.' },
+        { h:'Beurlaubung/Tagesausflug', t:'Genehmigung durch Therapeutin/Ärztin erforderlich.' },
+      ]},
+    { icon:'ℹ️', title:'Sonstiges A–Z', cat:'Hausordnung',
+      keys:'schach parkplatz post fahrrad sauna seelsorge notruf cafeteria',
+      items:[
+        { h:'Notruf', t:'Taste 0 am Zimmertelefon.' },
+        { h:'Outdoor-Schach', t:'Im Park verfügbar. Spielfiguren an der Rezeption leihen, nach dem Spiel zurückbringen.' },
+        { h:'Parkplatz', t:'Freibad Solara, kostenlos. Keine Haftung durch die Klinik.' },
+        { h:'Post', t:'Postfach im EG entsprechend der Zimmernummer. Post täglich abholen.' },
+        { h:'Fahrräder', t:'Abstellmöglichkeit im Fahrradschuppen (Aushang Rezeption).' },
+        { h:'Seelsorge', t:'Bregnitzhof Königsfeld, Raum 428 UG. Anmeldung über Briefkasten neben dem Seelsorgeraum.' },
+        { h:'Cafeteria', t:'Täglich 14:30–16:30 Uhr (außer Sa). Getränke und Kuchen erhältlich.' },
+      ]},
+  ],
+  orte: [
+    { icon:'🏥', title:'Hauptgebäude – Klinik', cat:'Therapieorte',
+      keys:'hauptgebäude klinik eg ug og erdgeschoss untergeschoss konferenz labor',
+      items:[
+        { h:'Wichtige Räume', t:'Rezeption (EG) · Cafeteria 403/405 EG · Konferenz 403 EG · Labor 440 EG · MTT 477 UG · Pflege 148 (1. OG) · Turnhalle 457b UG · Therapiekartentausch 486 EG' },
+        { h:'Kleidung', t:'Normal. Für MTT/Sport: Sportkleidung und Hallenturnschuhe.' },
+        { h:'Typ', t:'🏢 Indoor' },
+      ]},
+    { icon:'🛖', title:'Hütte am Wald', cat:'Therapieorte',
+      keys:'hütte wald outdoor draußen außen natur',
+      items:[
+        { h:'Lage', t:'Auf dem Klinikgelände, direkt am Waldrand. Kurzer Fußweg vom Hauptgebäude.' },
+        { h:'Typ', t:'🌿 Outdoor – Therapie findet im Freien statt.' },
+        { h:'Kleidung', t:'⚠️ Festes Schuhwerk und wetterfeste Kleidung sind Pflicht! Auch bei Regen.' },
+      ]},
+    { icon:'🌳', title:'Therapie am Park', cat:'Therapieorte',
+      keys:'park outdoor draußen außen spaziergang natur kurpark',
+      items:[
+        { h:'Lage', t:'Im Kurpark, ca. 5 Minuten Fußweg vom Hauptgebäude.' },
+        { h:'Typ', t:'🌿 Outdoor – Therapie findet im Freien statt.' },
+        { h:'Kleidung', t:'⚠️ Festes Schuhwerk und wetterfeste Kleidung mitbringen!' },
+      ]},
+    { icon:'🏢', title:'Studio K', cat:'Therapieorte',
+      keys:'studio k rathausstraße separates gebäude außengebäude',
+      items:[
+        { h:'Lage', t:'Separates Gebäude auf der Rathausstraße, ca. 5–8 Minuten Fußweg.' },
+        { h:'Typ', t:'Indoor / teilweise Outdoor.' },
+        { h:'Hinweis', t:'Genügend Zeit für den Fußweg einplanen!' },
+      ]},
+  ],
+};
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  STATE                                               ║
+// ╚══════════════════════════════════════════════════════╝
+
+const S = {
+  view: 'day',
+  date: todayStr(),
+  searchOpen: false,
+  query: '',
+  card: loadCard(),
+  notifsScheduled: false,
+};
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  STORAGE                                             ║
+// ╚══════════════════════════════════════════════════════╝
+
+function loadCard() {
+  try { const d = localStorage.getItem('reha_card'); return d ? JSON.parse(d) : null; }
+  catch { return null; }
+}
+function saveCard(c) { localStorage.setItem('reha_card', JSON.stringify(c)); S.card = c; }
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  UTILS                                               ║
+// ╚══════════════════════════════════════════════════════╝
+
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+function parseDate(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+
+const WDAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const WDAYS_S = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+function fmtDate(s) {
+  const d = parseDate(s);
+  return `${WDAYS[d.getDay()]}, ${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function weekDays(start) {
+  const d = parseDate(start);
+  return Array.from({length:7}, (_,i) => {
+    const x = new Date(d); x.setDate(d.getDate()+i);
+    return x.toISOString().split('T')[0];
+  });
+}
+
+function toMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
+
+function isPast(date, time) {
+  if (date !== todayStr()) return false;
+  const now = new Date();
+  const [h,m] = time.split(':').map(Number);
+  return (now.getHours()*60+now.getMinutes()) > toMin(time)+5;
+}
+
+function esc(s) { return String(s).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+
+function hi(text, q) {
+  if (!q || q.length < 2) return esc(text);
+  const rx = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  return esc(text).replace(rx, '<mark>$1</mark>');
+}
+
+function toast(msg, ms=2600) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), ms);
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  RENDER                                              ║
+// ╚══════════════════════════════════════════════════════╝
+
+function render() {
+  const app = document.getElementById('app');
+  let html = '';
+
+  if (!S.card) {
+    html = renderWelcome();
+  } else if (S.searchOpen && S.query.length >= 2) {
+    html = renderSearch(S.query);
+  } else if (S.view === 'day') {
+    html = renderDay(S.date);
+  } else {
+    html = renderWeek();
+  }
+
+  // Knowledge base always at bottom (except during search or welcome)
+  if (S.card && !(S.searchOpen && S.query.length >= 2)) {
+    html += renderKnowledge('');
+  }
+
+  app.innerHTML = html;
+}
+
+function renderWelcome() {
+  return `
+    <div style="text-align:center;padding:2.5rem 1rem 1rem">
+      <div style="font-size:3rem;margin-bottom:.75rem">🌲</div>
+      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.5rem">Willkommen in deiner Reha-App</h2>
+      <p style="color:var(--text-m);font-size:.9rem;max-width:320px;margin:0 auto 1.5rem">
+        Noch keine Therapiekarte geladen. Importiere deine JSON-Datei um loszulegen.
+      </p>
+      <button onclick="openImport()" style="background:var(--primary);color:#fff;border:none;border-radius:12px;padding:.8rem 1.75rem;font-size:1rem;font-weight:600;cursor:pointer">
+        📥 Therapiekarte importieren
+      </button>
+    </div>
+    ${renderKnowledge('')}`;
+}
+
+/* ── DAY VIEW ── */
+function renderDay(date) {
+  const today = todayStr();
+  const isToday = date === today;
+
+  const apts = (S.card.appointments||[])
+    .filter(a => a.date === date)
+    .sort((a,b) => toMin(a.time)-toMin(b.time));
+
+  const all = [...MEALS.map(m=>({...m})), ...apts]
+    .sort((a,b) => toMin(a.time)-toMin(b.time));
+
+  const prev = offsetDate(date,-1), next = offsetDate(date,1);
+
+  let html = `
+    <div class="date-nav">
+      <button onclick="navDay('${prev}')">← </button>
+      <div class="cur">
+        ${isToday ? '<span class="today-pill">Heute</span>' : ''}${esc(fmtDate(date))}
+        <small>${isToday ? 'Alle Termine für heute' : ''}</small>
+      </div>
+      <button onclick="navDay('${next}')"> →</button>
+    </div>`;
+
+  if (isToday && Notification.permission === 'default') {
+    html += `<div class="notif-banner">
+      🔔 15-Minuten-Erinnerungen aktivieren?
+      <button onclick="requestNotifs()">Aktivieren</button>
+    </div>`;
+  }
+
+  if (all.length === 0) {
+    html += `<div class="free-day"><div class="icon">🌿</div>
+      <strong>Freier Tag</strong><br>
+      <span style="color:var(--text-m);font-size:.88rem">Keine Termine – genieße die Ruhe</span></div>`;
+  } else {
+    html += '<div class="timeline">';
+    for (const ev of all) html += renderCard(ev, date);
+    html += '</div>';
+  }
+  return html;
+}
+
+function renderCard(ev, date) {
+  if (ev.meal) {
+    return `<div class="ev meal">
+      <div class="ev-time">${esc(ev.time)}<div class="end">${esc(ev.end)}</div></div>
+      <div class="ev-body">
+        <div class="ev-title">${ev.icon} ${esc(ev.title)}</div>
+        <div class="ev-meta"><span class="badge meal">Mahlzeit</span></div>
+        ${ev.hint ? `<div class="ev-hint">${esc(ev.hint)}</div>` : ''}
+      </div></div>`;
+  }
+
+  const past = isPast(date, ev.time);
+  const cls = ev.reminder ? 'reminder' : ev.outdoor ? 'outdoor' : 'indoor';
+  const badge = ev.outdoor
+    ? '<span class="badge out">🌿 Outdoor</span>'
+    : ev.reminder ? '' : '<span class="badge in">🏢 Indoor</span>';
+  const data = encodeURIComponent(JSON.stringify(ev));
+
+  return `<div class="ev ${cls}${past?' past':''}" onclick="showDetail('${data}')">
+    <div class="ev-time">${esc(ev.time)}</div>
+    <div class="ev-body">
+      <div class="ev-title">${esc(ev.title)}</div>
+      <div class="ev-meta">
+        ${ev.therapist ? `<span>👤 ${esc(ev.therapist)}</span>` : ''}
+        ${ev.room ? `<span>📍 ${esc(ev.room)}</span>` : ''}
+        ${badge}
+      </div>
+      ${ev.hint ? `<div class="ev-hint">${esc(ev.hint)}</div>` : ''}
+    </div></div>`;
+}
+
+/* ── WEEK VIEW ── */
+function renderWeek() {
+  const days = weekDays(S.card.week || S.date);
+  const today = todayStr();
+  let html = '<div class="week-scroll"><div class="week-grid">';
+
+  for (const day of days) {
+    const d = parseDate(day);
+    const isToday = day === today;
+    const apts = (S.card.appointments||[])
+      .filter(a=>a.date===day)
+      .sort((a,b)=>toMin(a.time)-toMin(b.time));
+    const all = [...MEALS.map(m=>({...m})),...apts]
+      .sort((a,b)=>toMin(a.time)-toMin(b.time));
+
+    html += `<div class="week-day${isToday?' today':''}" onclick="navDay('${day}')">
+      <div class="wd-name">${WDAYS_S[d.getDay()]}</div>
+      <div class="wd-num">${d.getDate()}</div>`;
+
+    for (const ev of all) {
+      if (ev.meal) {
+        const short = ev.title==='Frühstück'?'Frühst.':ev.title==='Mittagessen'?'Mittag':'Abend';
+        html += `<div class="wpill meal" title="${esc(ev.title)}">${esc(ev.time)} ${short}</div>`;
+      } else {
+        const c = ev.reminder?'rem':ev.outdoor?'out':'in';
+        const t = ev.title.length>16 ? ev.title.slice(0,15)+'…' : ev.title;
+        html += `<div class="wpill ${c}" title="${esc(ev.title)} – ${esc(ev.room||'')}">${esc(ev.time)} ${esc(t)}</div>`;
+      }
+    }
+    html += '</div>';
+  }
+  return html + '</div></div>';
+}
+
+/* ── KNOWLEDGE ── */
+function renderKnowledge(q) {
+  const all = [
+    ...KNOWLEDGE.hausordnung,
+    ...KNOWLEDGE.orte,
+  ];
+  let html = '<div class="know-section"><div class="know-header">🗂 Hausordnung & Therapieorte</div><div class="accordion">';
+
+  for (const sec of all) {
+    const id = 'acc_' + sec.title.replace(/\W+/g,'_');
+    html += `<div class="acc-item" id="${id}">
+      <button class="acc-trigger" onclick="toggleAcc('${id}')">
+        <span>${sec.icon}</span>
+        <span>${esc(sec.title)}</span>
+        <span class="cat">${esc(sec.cat)}</span>
+        <i class="chev">▾</i>
+      </button>
+      <div class="acc-body">
+        ${sec.items.map(it=>`<div class="ke"><strong>${esc(it.h)}</strong>${esc(it.t)}</div>`).join('')}
+      </div></div>`;
+  }
+  return html + '</div></div>';
+}
+
+/* ── SEARCH ── */
+function renderSearch(q) {
+  const ql = q.toLowerCase();
+  const results = [];
+
+  // Appointments
+  for (const a of (S.card.appointments||[])) {
+    if (`${a.title} ${a.therapist} ${a.room} ${a.hint}`.toLowerCase().includes(ql)) {
+      results.push({
+        cat: '📅 Termine',
+        title: hi(a.title, q),
+        body: `${hi(a.date+' '+a.time, q)} · ${hi(a.room||'', q)}${a.therapist?' ('+hi(a.therapist,q)+')':''}`,
+      });
+    }
+  }
+
+  // Knowledge
+  const allSec = [...KNOWLEDGE.hausordnung, ...KNOWLEDGE.orte];
+  for (const sec of allSec) {
+    const hay = `${sec.title} ${sec.keys} ${sec.items.map(i=>i.h+' '+i.t).join(' ')}`.toLowerCase();
+    if (!hay.includes(ql)) continue;
+    const hits = sec.items.filter(i=>(i.h+' '+i.t).toLowerCase().includes(ql));
+    const show = hits.length ? hits : sec.items.slice(0,2);
+    results.push({
+      cat: `📋 ${sec.cat} · ${sec.icon} ${sec.title}`,
+      title: hi(sec.title, q),
+      body: show.map(i=>`<strong>${hi(i.h,q)}:</strong> ${hi(i.t,q)}`).join('<br>'),
+    });
+  }
+
+  if (!results.length) {
+    return `<div class="sr-empty"><div style="font-size:2rem;margin-bottom:.5rem">🔍</div>
+      <strong>Keine Ergebnisse</strong><br>
+      <span style="font-size:.85rem">Versuche: Rauchen · Outdoor · Nachtruhe · Hütte · EKG</span></div>`;
+  }
+
+  let html = `<div class="sr-list"><p style="font-size:.8rem;color:var(--text-l);margin-bottom:.25rem">
+    ${results.length} Ergebnis${results.length!==1?'se':''} für „${esc(q)}"</p>`;
+  for (const r of results) {
+    html += `<div class="sr-item">
+      <div class="sr-cat">${r.cat}</div>
+      <div class="sr-title">${r.title}</div>
+      <div class="sr-body">${r.body}</div>
+    </div>`;
+  }
+  return html + '</div>';
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  NAVIGATION                                          ║
+// ╚══════════════════════════════════════════════════════╝
+
+function offsetDate(s, delta) {
+  const d = parseDate(s); d.setDate(d.getDate()+delta);
+  return d.toISOString().split('T')[0];
+}
+
+function navDay(date) {
+  S.date = date;
+  S.view = 'day';
+  document.getElementById('btn-day').classList.add('active');
+  document.getElementById('btn-week').classList.remove('active');
+  render();
+  scheduleToday();
+}
+
+function setView(v) {
+  S.view = v;
+  document.getElementById('btn-day').classList.toggle('active', v==='day');
+  document.getElementById('btn-week').classList.toggle('active', v==='week');
+  render();
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  SEARCH                                              ║
+// ╚══════════════════════════════════════════════════════╝
+
+function toggleSearch() {
+  S.searchOpen = !S.searchOpen;
+  const bar = document.getElementById('search-bar');
+  bar.classList.toggle('open', S.searchOpen);
+  if (S.searchOpen) {
+    const inp = document.getElementById('search-input');
+    inp.value = ''; S.query = ''; inp.focus();
+  }
+  render();
+}
+
+function onSearch(v) { S.query = v; render(); }
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  MODALS                                              ║
+// ╚══════════════════════════════════════════════════════╝
+
+function showDetail(data) {
+  const ev = JSON.parse(decodeURIComponent(data));
+  const typeLabel = ev.outdoor ? '🌿 Outdoor' : ev.reminder ? '⚠️ Erinnerung' : '🏢 Indoor';
+  const typeColor = ev.outdoor ? 'var(--outdoor)' : ev.reminder ? 'var(--reminder)' : 'var(--indoor)';
+  const typeBg = ev.outdoor ? 'var(--outdoor-bg)' : ev.reminder ? 'var(--reminder-bg)' : 'var(--indoor-bg)';
+
+  document.getElementById('detail-body').innerHTML = `
+    <div class="modal-title">${esc(ev.title)}</div>
+    <div>
+      <div class="detail-row"><span class="lbl">🕐 Uhrzeit</span><span class="val">${esc(ev.time)} Uhr</span></div>
+      ${ev.therapist?`<div class="detail-row"><span class="lbl">👤 Therapeut</span><span class="val">${esc(ev.therapist)}</span></div>`:''}
+      ${ev.room?`<div class="detail-row"><span class="lbl">📍 Ort / Raum</span><span class="val">${esc(ev.room)}</span></div>`:''}
+      <div class="detail-row"><span class="lbl">Typ</span>
+        <span class="val" style="background:${typeBg};color:${typeColor};padding:.1rem .5rem;border-radius:20px;font-size:.83rem">${typeLabel}</span>
+      </div>
+      ${ev.hint?`<div class="detail-row"><span class="lbl">💡 Hinweis</span><span class="val" style="color:${typeColor}">${esc(ev.hint)}</span></div>`:''}
+    </div>`;
+  openModal('detail-overlay');
+}
+
+function openImport() { openModal('import-overlay'); }
+
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function toggleAcc(id) { document.getElementById(id).classList.toggle('open'); }
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  IMPORT                                              ║
+// ╚══════════════════════════════════════════════════════╝
+
+function importFile(inp) {
+  const file = inp.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.appointments)) throw new Error('Feld "appointments" fehlt');
+      saveCard(data);
+      S.date = data.week || todayStr();
+      S.notifsScheduled = false;
+      closeModal('import-overlay');
+      render();
+      scheduleToday();
+      toast(`✅ ${data.appointments.length} Termine importiert`);
+    } catch(err) {
+      toast('❌ Import-Fehler: ' + err.message, 4000);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearCard() {
+  if (!confirm('Therapiekarte löschen? Alle importierten Termine werden entfernt.')) return;
+  localStorage.removeItem('reha_card');
+  S.card = null;
+  S.date = todayStr();
+  S.notifsScheduled = false;
+  closeModal('import-overlay');
+  render();
+  toast('🗑️ Therapiekarte gelöscht');
+}
+
+// Drag & Drop
+document.getElementById('drop-zone').addEventListener('dragover', e => {
+  e.preventDefault(); e.currentTarget.classList.add('drag');
+});
+document.getElementById('drop-zone').addEventListener('dragleave', e => {
+  e.currentTarget.classList.remove('drag');
+});
+document.getElementById('drop-zone').addEventListener('drop', e => {
+  e.preventDefault(); e.currentTarget.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) importFile({ files:[file] });
+});
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  BENACHRICHTIGUNGEN                                  ║
+// ╚══════════════════════════════════════════════════════╝
+
+async function requestNotifs() {
+  if (!('Notification' in window)) { toast('❌ Browser unterstützt keine Benachrichtigungen'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    document.getElementById('notif-btn').classList.add('on');
+    S.notifsScheduled = false;
+    scheduleToday();
+    render();
+    toast('🔔 Erinnerungen aktiviert!');
+  } else {
+    toast('❌ Benachrichtigungen wurden abgelehnt');
+  }
+}
+
+function scheduleToday() {
+  if (Notification.permission !== 'granted') return;
+  if (S.notifsScheduled) return;
+
+  const today = todayStr();
+  const now = new Date();
+  let count = 0;
+
+  for (const apt of (S.card.appointments||[])) {
+    if (apt.date !== today) continue;
+    const [h,m] = apt.time.split(':').map(Number);
+    const aptTime = new Date(); aptTime.setHours(h,m,0,0);
+    const notifyAt = new Date(aptTime.getTime() - 15*60*1000);
+    const delay = notifyAt - now;
+    if (delay <= 0) continue;
+    count++;
+    setTimeout(() => {
+      const hint = apt.outdoor
+        ? ' – Outdoor! Festes Schuhwerk & wetterfeste Kleidung mitbringen.'
+        : apt.hint ? ` – ${apt.hint}` : '';
+      new Notification(`⏰ In 15 min: ${apt.title}`, {
+        body: `${apt.time} Uhr · ${apt.room||''}${apt.therapist?' ('+apt.therapist+')':''}${hint}`,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌲</text></svg>',
+        tag: `reha_${apt.date}_${apt.time}`,
+      });
+    }, delay);
+  }
+
+  S.notifsScheduled = true;
+  if (count > 0) toast(`🔔 ${count} Erinnerung${count!==1?'en':''} für heute geplant`);
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  KEYBOARD                                            ║
+// ╚══════════════════════════════════════════════════════╝
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden'));
+    if (S.searchOpen) toggleSearch();
+  }
+});
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  INIT                                                ║
+// ╚══════════════════════════════════════════════════════╝
+
+(function init() {
+  const today = todayStr();
+  if (S.card) {
+    const cardDays = weekDays(S.card.week || today);
+    S.date = cardDays.includes(today) ? today : (S.card.week || today);
+  } else {
+    S.date = today;
+  }
+
+  if (Notification.permission === 'granted') {
+    document.getElementById('notif-btn').classList.add('on');
+    scheduleToday();
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

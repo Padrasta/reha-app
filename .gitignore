@@ -1,0 +1,12 @@
+# Persönliche Therapiekarten (nur lokal, nie ins Repo!)
+therapiekarte-20*.json
+
+# Fotos / eingescannte Dokumente
+Dateien/
+
+# Claude-Einstellungen
+.claude/
+
+# Windows
+Thumbs.db
+desktop.ini

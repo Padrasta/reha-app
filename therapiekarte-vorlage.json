@@ -1,0 +1,43 @@
+{
+  "week": "2026-04-20",
+  "appointments": [
+    {
+      "date": "2026-04-21",
+      "time": "09:00",
+      "title": "Beispiel-Termin Indoor",
+      "therapist": "M. Mustermann",
+      "room": "421 EG",
+      "outdoor": false,
+      "hint": ""
+    },
+    {
+      "date": "2026-04-21",
+      "time": "14:00",
+      "title": "Walk & Talk",
+      "therapist": "S. Klausmann",
+      "room": "Hütte am Wald",
+      "outdoor": true,
+      "hint": "Festes Schuhwerk, wetterfeste Kleidung"
+    },
+    {
+      "date": "2026-04-23",
+      "time": "18:00",
+      "title": "⚠️ Medikamentenbestellung",
+      "therapist": "",
+      "room": "Briefkasten Stationszimmer",
+      "outdoor": false,
+      "hint": "Bis 18:00 Uhr in den Briefkasten beim Stationszimmer einwerfen!",
+      "reminder": true
+    },
+    {
+      "date": "2026-04-24",
+      "time": "16:00",
+      "title": "⚠️ Medikamente abholen",
+      "therapist": "",
+      "room": "Stationszimmer",
+      "outdoor": false,
+      "hint": "Medikamente zwischen 16:00–17:00 Uhr im Stationszimmer abholen!",
+      "reminder": true
+    }
+  ]
+}
