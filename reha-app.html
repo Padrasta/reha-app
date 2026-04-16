@@ -603,7 +603,8 @@ function renderWeek() {
         html += `<div class="wpill meal" title="${esc(ev.title)}">${esc(ev.time)} ${short}</div>`;
       } else {
         const c = ev.reminder?'rem':ev.outdoor?'out':'in';
-        html += `<div class="wpill ${c}">${esc(ev.time)} ${esc(ev.title)}</div>`;
+        const data = encodeURIComponent(JSON.stringify(ev));
+        html += `<div class="wpill ${c}" onclick="event.stopPropagation();showDetail('${data}')">${esc(ev.time)} ${esc(ev.title)}</div>`;
       }
     }
     html += '</div>';
