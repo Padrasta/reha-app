@@ -290,41 +290,45 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
   <div class="modal" onclick="event.stopPropagation()">
     <div class="handle"></div>
     <div class="modal-title">📥 Therapiekarte importieren</div>
-    <p style="font-size:.85rem;color:var(--text-m)">Lade eine JSON-Datei deiner neuen Therapiekarte. Alles bleibt lokal.</p>
-    <div class="import-drop" id="drop-zone" onclick="document.getElementById('file-in').click()">
-      <div class="di">📄</div>
-      <strong>JSON-Datei auswählen</strong>
-      <p>oder hierher ziehen</p>
+
+    <!-- Tab-Switcher -->
+    <div style="display:flex;gap:.4rem;margin-bottom:1rem">
+      <button id="tab-file" onclick="switchImportTab('file')"
+        style="flex:1;padding:.5rem;border-radius:8px;border:1.5px solid var(--primary);background:var(--primary);color:#fff;font-weight:600;cursor:pointer;font-size:.85rem">
+        💻 Datei wählen
+      </button>
+      <button id="tab-paste" onclick="switchImportTab('paste')"
+        style="flex:1;padding:.5rem;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text-m);font-weight:600;cursor:pointer;font-size:.85rem">
+        📋 JSON einfügen
+      </button>
     </div>
-    <input type="file" id="file-in" accept=".json,application/json" onchange="importFile(this)" style="display:none">
-    <details>
-      <summary style="cursor:pointer;font-size:.82rem;color:var(--text-m);padding:.35rem 0">JSON-Format anzeigen</summary>
-      <pre class="json-ex">{
-  "week": "2026-04-20",
-  "appointments": [
-    {
-      "date": "2026-04-22",
-      "time": "09:00",
-      "title": "Einzelpsychotherapie",
-      "therapist": "M. Ortiz",
-      "room": "421 EG",
-      "outdoor": false,
-      "hint": ""
-    },
-    {
-      "date": "2026-04-22",
-      "time": "14:00",
-      "title": "Walk & Talk",
-      "therapist": "S. Klausmann",
-      "room": "Hütte am Wald",
-      "outdoor": true,
-      "hint": "Festes Schuhwerk, wetterfeste Kleidung"
-    }
-  ]
-}</pre>
-    </details>
-    <button class="modal-btn" onclick="closeModal('import-overlay')">Schließen</button>
-    <button class="modal-btn secondary" onclick="clearCard()">Therapiekarte löschen</button>
+
+    <!-- Tab: Datei -->
+    <div id="import-tab-file">
+      <div class="import-drop" id="drop-zone" onclick="document.getElementById('file-in').click()">
+        <div class="di">📄</div>
+        <strong>JSON-Datei auswählen</strong>
+        <p>oder hierher ziehen</p>
+      </div>
+      <input type="file" id="file-in" accept=".json,text/plain,*/*" onchange="importFile(this)" style="display:none">
+      <p style="font-size:.75rem;color:var(--text-l);text-align:center;margin-top:.25rem">
+        Auf dem Handy: Datei-App öffnen → JSON-Datei antippen
+      </p>
+    </div>
+
+    <!-- Tab: Einfügen -->
+    <div id="import-tab-paste" style="display:none">
+      <p style="font-size:.85rem;color:var(--text-m);margin-bottom:.5rem">
+        JSON-Text hier einfügen (z. B. aus WhatsApp oder Mail kopiert):
+      </p>
+      <textarea id="paste-input" rows="8"
+        style="width:100%;padding:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;font-family:monospace;resize:vertical;outline:none;color:var(--text);background:var(--surface2)"
+        placeholder='{"week":"2026-04-20","appointments":[...]}'></textarea>
+      <button class="modal-btn" style="margin-top:.75rem" onclick="importPaste()">Importieren</button>
+    </div>
+
+    <button class="modal-btn secondary" style="margin-top:.75rem" onclick="clearCard()">Therapiekarte löschen</button>
+    <button class="modal-btn secondary" onclick="closeModal('import-overlay')">Schließen</button>
   </div>
 </div>
 
@@ -842,7 +846,43 @@ function showDetail(data) {
   openModal('detail-overlay');
 }
 
-function openImport() { openModal('import-overlay'); }
+function openImport() {
+  switchImportTab('file');
+  document.getElementById('paste-input').value = '';
+  openModal('import-overlay');
+}
+
+function switchImportTab(tab) {
+  const isFile = tab === 'file';
+  document.getElementById('import-tab-file').style.display  = isFile ? '' : 'none';
+  document.getElementById('import-tab-paste').style.display = isFile ? 'none' : '';
+  const btnFile  = document.getElementById('tab-file');
+  const btnPaste = document.getElementById('tab-paste');
+  btnFile.style.background    = isFile ? 'var(--primary)' : 'var(--bg)';
+  btnFile.style.color         = isFile ? '#fff' : 'var(--text-m)';
+  btnFile.style.borderColor   = isFile ? 'var(--primary)' : 'var(--border)';
+  btnPaste.style.background   = isFile ? 'var(--bg)' : 'var(--primary)';
+  btnPaste.style.color        = isFile ? 'var(--text-m)' : '#fff';
+  btnPaste.style.borderColor  = isFile ? 'var(--border)' : 'var(--primary)';
+}
+
+function importPaste() {
+  const raw = document.getElementById('paste-input').value.trim();
+  if (!raw) { toast('❌ Kein Text eingefügt'); return; }
+  try {
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data.appointments)) throw new Error('Feld "appointments" fehlt');
+    saveCard(data);
+    S.date = data.week || todayStr();
+    S.notifsScheduled = false;
+    closeModal('import-overlay');
+    render();
+    scheduleToday();
+    toast(`✅ ${data.appointments.length} Termine importiert`);
+  } catch(err) {
+    toast('❌ Ungültiges JSON: ' + err.message, 4000);
+  }
+}
 
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
