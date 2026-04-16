@@ -104,15 +104,15 @@ main{max-width:800px;margin:0 auto;padding:1rem}
 
 /* ── WEEK VIEW ───────────────────────────────────────── */
 .week-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:.5rem}
-.week-grid{display:grid;grid-template-columns:repeat(7,minmax(96px,1fr));gap:.4rem;min-width:680px}
-.week-day{background:var(--surface);border-radius:var(--r-sm);padding:.55rem;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .15s}
+.week-grid{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:.5rem;min-width:910px}
+.week-day{background:var(--surface);border-radius:var(--r-sm);padding:.7rem;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .15s}
 .week-day:hover{box-shadow:var(--shadow-md)}
 .week-day.today{border:2px solid var(--primary)}
-.wd-name{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-l);margin-bottom:.25rem}
+.wd-name{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-l);margin-bottom:.25rem}
 .today .wd-name{color:var(--primary)}
-.wd-num{font-size:1rem;font-weight:700;margin-bottom:.4rem;line-height:1;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.wd-num{font-size:1rem;font-weight:700;margin-bottom:.5rem;line-height:1;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .today .wd-num{background:var(--primary);color:#fff;font-size:.85rem}
-.wpill{font-size:.68rem;padding:.2rem .35rem;border-radius:4px;margin-bottom:.2rem;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpill{font-size:.72rem;padding:.25rem .4rem;border-radius:4px;margin-bottom:.25rem;line-height:1.4;white-space:normal;word-break:break-word}
 .wpill.meal{background:var(--meal-bg);color:var(--meal)}
 .wpill.out{background:var(--outdoor-bg);color:var(--outdoor)}
 .wpill.in{background:var(--indoor-bg);color:var(--indoor)}
@@ -412,7 +412,14 @@ function saveCard(c) { localStorage.setItem('reha_card', JSON.stringify(c)); S.c
 // ║  UTILS                                               ║
 // ╚══════════════════════════════════════════════════════╝
 
-function todayStr() { return new Date().toISOString().split('T')[0]; }
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function dateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 function parseDate(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
 
@@ -429,7 +436,7 @@ function weekDays(start) {
   const d = parseDate(start);
   return Array.from({length:7}, (_,i) => {
     const x = new Date(d); x.setDate(d.getDate()+i);
-    return x.toISOString().split('T')[0];
+    return dateStr(x);
   });
 }
 
@@ -596,8 +603,7 @@ function renderWeek() {
         html += `<div class="wpill meal" title="${esc(ev.title)}">${esc(ev.time)} ${short}</div>`;
       } else {
         const c = ev.reminder?'rem':ev.outdoor?'out':'in';
-        const t = ev.title.length>16 ? ev.title.slice(0,15)+'…' : ev.title;
-        html += `<div class="wpill ${c}" title="${esc(ev.title)} – ${esc(ev.room||'')}">${esc(ev.time)} ${esc(t)}</div>`;
+        html += `<div class="wpill ${c}">${esc(ev.time)} ${esc(ev.title)}</div>`;
       }
     }
     html += '</div>';
@@ -683,7 +689,7 @@ function renderSearch(q) {
 
 function offsetDate(s, delta) {
   const d = parseDate(s); d.setDate(d.getDate()+delta);
-  return d.toISOString().split('T')[0];
+  return dateStr(d);
 }
 
 function navDay(date) {
