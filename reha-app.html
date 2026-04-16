@@ -466,6 +466,18 @@ const KNOWLEDGE = {
         { h:'Hinweis', t:'Genügend Zeit für den Fußweg einplanen!' },
       ]},
   ],
+  telefon: [
+    { icon:'📞', title:'Wichtige Telefonnummern', cat:'Klinik',
+      keys:'telefon nummer anrufen rezeption pflege notfall sekretariat chefarzt fax email',
+      items:[
+        { h:'Rezeption (intern)',        t:'100',                          phone:'100' },
+        { h:'Rezeption (extern)',        t:'07725 932-0',                  phone:'+497725932-0' },
+        { h:'Pflege',                   t:'8149',                         phone:'8149' },
+        { h:'Chefarztsekretariat',      t:'426',                          phone:'426' },
+        { h:'Fax Rezeption',            t:'07725 932-499',                phone:null },
+        { h:'E-Mail Rezeption',         t:'rezeption@doniswaldklinik.de', phone:null, mail:'rezeption@doniswaldklinik.de' },
+      ]},
+  ],
 };
 
 // ╔══════════════════════════════════════════════════════╗
@@ -479,6 +491,7 @@ const S = {
   query: '',
   card: loadCard(),
   notifsScheduled: false,
+  editingAppt: null,   // gesetzter Termin wird beim Speichern ersetzt statt neu angelegt
 };
 
 // ╔══════════════════════════════════════════════════════╗
@@ -709,13 +722,27 @@ function renderWeek() {
 /* ── KNOWLEDGE ── */
 function renderKnowledge(q) {
   const all = [
+    ...KNOWLEDGE.telefon,
     ...KNOWLEDGE.hausordnung,
     ...KNOWLEDGE.orte,
   ];
-  let html = '<div class="know-section"><div class="know-header">🗂 Hausordnung & Therapieorte</div><div class="accordion">';
+  let html = '<div class="know-section"><div class="know-header">🗂 Hausordnung, Orte & Kontakt</div><div class="accordion">';
 
   for (const sec of all) {
     const id = 'acc_' + sec.title.replace(/\W+/g,'_');
+    const itemsHtml = sec.items.map(it => {
+      let val;
+      if (it.phone) {
+        val = `<a href="tel:${it.phone}" style="color:var(--primary);font-weight:700;text-decoration:none">
+          📞 ${esc(it.t)}</a>`;
+      } else if (it.mail) {
+        val = `<a href="mailto:${it.mail}" style="color:var(--primary);text-decoration:none">
+          ✉️ ${esc(it.t)}</a>`;
+      } else {
+        val = esc(it.t);
+      }
+      return `<div class="ke"><strong>${esc(it.h)}</strong>${val}</div>`;
+    }).join('');
     html += `<div class="acc-item" id="${id}">
       <button class="acc-trigger" onclick="toggleAcc('${id}')">
         <span>${sec.icon}</span>
@@ -723,9 +750,7 @@ function renderKnowledge(q) {
         <span class="cat">${esc(sec.cat)}</span>
         <i class="chev">▾</i>
       </button>
-      <div class="acc-body">
-        ${sec.items.map(it=>`<div class="ke"><strong>${esc(it.h)}</strong>${esc(it.t)}</div>`).join('')}
-      </div></div>`;
+      <div class="acc-body">${itemsHtml}</div></div>`;
   }
   return html + '</div></div>';
 }
@@ -747,7 +772,7 @@ function renderSearch(q) {
   }
 
   // Knowledge
-  const allSec = [...KNOWLEDGE.hausordnung, ...KNOWLEDGE.orte];
+  const allSec = [...KNOWLEDGE.telefon, ...KNOWLEDGE.hausordnung, ...KNOWLEDGE.orte];
   for (const sec of allSec) {
     const hay = `${sec.title} ${sec.keys} ${sec.items.map(i=>i.h+' '+i.t).join(' ')}`.toLowerCase();
     if (!hay.includes(ql)) continue;
@@ -830,6 +855,7 @@ function showDetail(data) {
   const typeColor = ev.outdoor ? 'var(--outdoor)' : ev.reminder ? 'var(--reminder)' : 'var(--indoor)';
   const typeBg = ev.outdoor ? 'var(--outdoor-bg)' : ev.reminder ? 'var(--reminder-bg)' : 'var(--indoor-bg)';
 
+  const safeData = encodeURIComponent(JSON.stringify(ev));
   document.getElementById('detail-body').innerHTML = `
     <div class="modal-title">${esc(ev.title)}</div>
     <div>
@@ -842,6 +868,16 @@ function showDetail(data) {
         <span class="val" style="background:${typeBg};color:${typeColor};padding:.1rem .5rem;border-radius:20px;font-size:.83rem">${typeLabel}</span>
       </div>
       ${ev.hint?`<div class="detail-row"><span class="lbl">💡 Hinweis</span><span class="val" style="color:${typeColor}">${esc(ev.hint)}</span></div>`:''}
+    </div>
+    <div style="display:flex;gap:.5rem;margin-top:1.25rem">
+      <button onclick="editAppt('${safeData}')"
+        style="flex:1;padding:.65rem;background:var(--primary-lt);color:var(--primary);border:1.5px solid var(--primary);border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer">
+        ✏️ Bearbeiten
+      </button>
+      <button onclick="deleteAppt('${safeData}')"
+        style="flex:1;padding:.65rem;background:#fef2f2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer">
+        🗑️ Löschen
+      </button>
     </div>`;
   openModal('detail-overlay');
 }
@@ -930,7 +966,9 @@ function clearCard() {
 // ╚══════════════════════════════════════════════════════╝
 
 function openAddAppt() {
-  // Datum vorausfüllen: aktuell angezeigte Tag
+  S.editingAppt = null;
+  document.querySelector('.modal-title', document.getElementById('add-overlay'));
+  document.getElementById('add-overlay').querySelector('.modal-title').textContent = '＋ Termin hinzufügen';
   document.getElementById('f-date').value = S.date;
   document.getElementById('f-time').value = '';
   document.getElementById('f-title').value = '';
@@ -939,6 +977,34 @@ function openAddAppt() {
   document.getElementById('f-hint').value = '';
   document.getElementById('ft-indoor').checked = true;
   openModal('add-overlay');
+}
+
+function editAppt(data) {
+  const ev = JSON.parse(decodeURIComponent(data));
+  S.editingAppt = ev;
+  closeModal('detail-overlay');
+  document.getElementById('add-overlay').querySelector('.modal-title').textContent = '✏️ Termin bearbeiten';
+  document.getElementById('f-date').value = ev.date || '';
+  document.getElementById('f-time').value = ev.time || '';
+  document.getElementById('f-title').value = ev.title || '';
+  document.getElementById('f-therapist').value = ev.therapist || '';
+  document.getElementById('f-room').value = ev.room || '';
+  document.getElementById('f-hint').value = ev.hint || '';
+  const type = ev.reminder ? 'reminder' : ev.outdoor ? 'outdoor' : 'indoor';
+  document.getElementById(`ft-${type}`).checked = true;
+  openModal('add-overlay');
+}
+
+function deleteAppt(data) {
+  const ev = JSON.parse(decodeURIComponent(data));
+  if (!confirm(`Termin „${ev.title}" am ${ev.date} um ${ev.time} Uhr löschen?`)) return;
+  S.card.appointments = S.card.appointments.filter(a =>
+    !(a.date === ev.date && a.time === ev.time && a.title === ev.title)
+  );
+  saveCard(S.card);
+  closeModal('detail-overlay');
+  render();
+  toast('🗑️ Termin gelöscht');
 }
 
 function getMonday(dateStr) {
@@ -961,23 +1027,37 @@ function saveAppt() {
 
   const type = document.querySelector('input[name="f-type"]:checked').value;
   const appt = {
-    date,
-    time,
-    title,
+    date, time, title,
     therapist: document.getElementById('f-therapist').value.trim(),
     room:      document.getElementById('f-room').value.trim(),
     outdoor:   type === 'outdoor',
-    reminder:  type === 'reminder' || undefined,
     hint:      document.getElementById('f-hint').value.trim(),
+    // Dauer aus Original übernehmen falls vorhanden
+    ...(S.editingAppt?.duration ? { duration: S.editingAppt.duration } : {}),
   };
-  if (!appt.reminder) delete appt.reminder;
+  if (type === 'reminder') appt.reminder = true;
 
   // Karte anlegen falls noch keine vorhanden
   if (!S.card) {
     S.card = { week: getMonday(date), appointments: [] };
   }
 
-  S.card.appointments.push(appt);
+  if (S.editingAppt) {
+    // Vorhandenen Termin ersetzen
+    const idx = S.card.appointments.findIndex(a =>
+      a.date === S.editingAppt.date &&
+      a.time === S.editingAppt.time &&
+      a.title === S.editingAppt.title
+    );
+    if (idx !== -1) S.card.appointments[idx] = appt;
+    else S.card.appointments.push(appt);
+    S.editingAppt = null;
+    toast('✅ Termin aktualisiert');
+  } else {
+    S.card.appointments.push(appt);
+    toast('✅ Termin gespeichert');
+  }
+
   saveCard(S.card);
   closeModal('add-overlay');
   S.date = date;
