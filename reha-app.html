@@ -275,9 +275,16 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
       </div>
     </div>
 
-    <div class="form-field">
-      <label for="f-hint">Hinweis</label>
-      <input type="text" id="f-hint" placeholder="z. B. Sportkleidung mitbringen">
+    <div class="form-row">
+      <div class="form-field">
+        <label for="f-duration">Dauer (Minuten)</label>
+        <input type="number" id="f-duration" placeholder="z. B. 50" min="5" max="300" step="5"
+          style="width:100%;padding:.6rem .8rem;border:1px solid var(--border);border-radius:8px;font-size:.92rem;font-family:inherit;color:var(--text);background:var(--surface2);outline:none">
+      </div>
+      <div class="form-field">
+        <label for="f-hint">Hinweis</label>
+        <input type="text" id="f-hint" placeholder="z. B. Sportkleidung">
+      </div>
     </div>
 
     <button class="modal-btn" onclick="saveAppt()">Termin speichern</button>
@@ -975,6 +982,7 @@ function openAddAppt() {
   document.getElementById('f-therapist').value = '';
   document.getElementById('f-room').value = '';
   document.getElementById('f-hint').value = '';
+  document.getElementById('f-duration').value = '';
   document.getElementById('ft-indoor').checked = true;
   openModal('add-overlay');
 }
@@ -990,6 +998,7 @@ function editAppt(data) {
   document.getElementById('f-therapist').value = ev.therapist || '';
   document.getElementById('f-room').value = ev.room || '';
   document.getElementById('f-hint').value = ev.hint || '';
+  document.getElementById('f-duration').value = ev.duration || '';
   const type = ev.reminder ? 'reminder' : ev.outdoor ? 'outdoor' : 'indoor';
   document.getElementById(`ft-${type}`).checked = true;
   openModal('add-overlay');
@@ -1032,9 +1041,9 @@ function saveAppt() {
     room:      document.getElementById('f-room').value.trim(),
     outdoor:   type === 'outdoor',
     hint:      document.getElementById('f-hint').value.trim(),
-    // Dauer aus Original übernehmen falls vorhanden
-    ...(S.editingAppt?.duration ? { duration: S.editingAppt.duration } : {}),
   };
+  const durationVal = parseInt(document.getElementById('f-duration').value);
+  if (durationVal > 0) appt.duration = durationVal;
   if (type === 'reminder') appt.reminder = true;
 
   // Karte anlegen falls noch keine vorhanden
