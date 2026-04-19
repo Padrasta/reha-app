@@ -98,6 +98,10 @@ main{max-width:800px;margin:0 auto;padding:1rem}
 .ev.reminder .ev-hint{color:var(--reminder)}
 .ev.meal .ev-hint{color:var(--meal)}
 
+/* ── PAUSE BAR ───────────────────────────────────────── */
+.pause-bar{display:flex;align-items:center;justify-content:center;gap:.4rem;background:#d9f0e0;color:#3a6b4a;border-radius:6px;padding:.3rem .75rem;font-size:.78rem;font-weight:500;margin:-.1rem 0;user-select:none}
+.pause-bar::before,.pause-bar::after{content:'';flex:1;height:1px;background:#a8d5b5;opacity:.7}
+
 /* ── FREE DAY ────────────────────────────────────────── */
 .free-day{background:var(--surface);border-radius:var(--r);padding:2.5rem 1rem;text-align:center;box-shadow:var(--shadow)}
 .free-day .icon{font-size:2.5rem;margin-bottom:.5rem}
@@ -649,7 +653,19 @@ function renderDay(date) {
       <span style="color:var(--text-m);font-size:.88rem">Keine Termine – genieße die Ruhe</span></div>`;
   } else {
     html += '<div class="timeline">';
-    for (const ev of all) html += renderCard(ev, date);
+    for (let i = 0; i < all.length; i++) {
+      html += renderCard(all[i], date);
+      if (i < all.length - 1) {
+        const cur = all[i], nxt = all[i + 1];
+        const endMin = cur.meal
+          ? toMin(cur.end)
+          : cur.duration ? toMin(cur.time) + cur.duration : toMin(cur.time);
+        const gap = toMin(nxt.time) - endMin;
+        if (gap > 0) {
+          html += `<div class="pause-bar">☕ ${gap} Min Pause</div>`;
+        }
+      }
+    }
     html += '</div>';
   }
   return html;
