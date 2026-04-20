@@ -813,7 +813,7 @@ function renderKnowledge(q) {
       <button onclick="exportLastWeek()"
         style="width:100%;padding:.8rem;background:var(--primary);color:#fff;border:none;border-radius:var(--r-sm);font-size:.92rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:opacity .15s"
         onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-        📄 Vorwoche als Bericht exportieren (.rtf)
+        📄 Vorwoche manuell exportieren (.rtf)
       </button>
     </div>` : '';
   return html + '</div>' + exportBtn + '</div>';
@@ -972,6 +972,7 @@ function importPaste() {
   try {
     const data = JSON.parse(raw);
     if (!Array.isArray(data.appointments)) throw new Error('Feld "appointments" fehlt');
+    autoExportOnImport();
     saveCard(data);
     S.date = data.week || todayStr();
     S.notifsScheduled = false;
@@ -1000,6 +1001,7 @@ function importFile(inp) {
     try {
       const data = JSON.parse(e.target.result);
       if (!Array.isArray(data.appointments)) throw new Error('Feld "appointments" fehlt');
+      autoExportOnImport();
       saveCard(data);
       S.date = data.week || todayStr();
       S.notifsScheduled = false;
@@ -1128,12 +1130,19 @@ function rtfEsc(s) {
     .replace(/ß/g,"\\'df").replace(/–/g,'\\endash ').replace(/—/g,'\\emdash ');
 }
 
+// Wird vom Export-Button aufgerufen (immer Vorwoche)
 function exportLastWeek() {
   const today = parseDate(todayStr());
   const dow = today.getDay() || 7;
   const lastMon = new Date(today);
   lastMon.setDate(today.getDate() - (dow - 1) - 7);
-  const days = weekDays(dateStr(lastMon));
+  exportWeek(dateStr(lastMon));
+}
+
+// Kernfunktion – exportiert beliebige Woche anhand ihres Montags
+function exportWeek(mondayDs) {
+  const lastMon = parseDate(mondayDs);
+  const days = weekDays(mondayDs);
   const lastSun = parseDate(days[6]);
   const kw = getISOWeek(lastMon);
 
@@ -1226,7 +1235,14 @@ function exportLastWeek() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  toast('📄 Wochenbericht-KW' + kw + ' wird heruntergeladen…');
+  toast(`📄 Wochenbericht KW${kw} gespeichert`);
+}
+
+// Vor dem Import: aktuelle Karte automatisch als RTF sichern
+function autoExportOnImport() {
+  if (S.card?.week && S.card.appointments?.length) {
+    exportWeek(S.card.week);
+  }
 }
 
 // ╔══════════════════════════════════════════════════════╗
