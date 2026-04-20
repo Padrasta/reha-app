@@ -810,10 +810,10 @@ function renderKnowledge(q) {
   }
   const exportBtn = S.card ? `
     <div style="margin-top:1.25rem">
-      <button onclick="exportLastWeek()"
+      <button onclick="exportWeek(S.card.week)"
         style="width:100%;padding:.8rem;background:var(--primary);color:#fff;border:none;border-radius:var(--r-sm);font-size:.92rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:opacity .15s"
         onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-        📄 Vorwoche manuell exportieren (.rtf)
+        📄 Aktuelle Woche als Bericht exportieren (.rtf)
       </button>
     </div>` : '';
   return html + '</div>' + exportBtn + '</div>';
