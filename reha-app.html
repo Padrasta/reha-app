@@ -104,6 +104,27 @@ main{max-width:800px;margin:0 auto;padding:1rem}
 
 /* ── FREE DAY ────────────────────────────────────────── */
 .free-day{background:var(--surface);border-radius:var(--r);padding:2.5rem 1rem;text-align:center;box-shadow:var(--shadow)}
+
+/* ── BLUTDRUCKTAGEBUCH ───────────────────────────────── */
+.bp-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
+.bp-nav button{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.35rem .75rem;cursor:pointer;font-size:.95rem;color:var(--text-m);transition:all .15s}
+.bp-nav button:hover{background:var(--primary-lt);color:var(--primary);border-color:var(--primary)}
+.bp-nav span{font-size:.88rem;font-weight:600;color:var(--text)}
+.bp-week{display:flex;flex-direction:column;gap:.45rem;max-height:58vh;overflow-y:auto;padding-right:.15rem}
+.bp-day{background:var(--bg);border-radius:var(--r-sm);padding:.6rem .75rem}
+.bp-today{border:2px solid var(--primary)}
+.bp-day-name{font-size:.74rem;font-weight:700;color:var(--text-m);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em}
+.bp-today .bp-day-name{color:var(--primary)}
+.bp-slot{display:flex;align-items:center;gap:.45rem;padding:.2rem 0}
+.bp-slot+.bp-slot{border-top:1px solid var(--border-l);margin-top:.15rem;padding-top:.25rem}
+.bp-slot-lbl{font-size:.75rem;min-width:70px;color:var(--text-m);flex-shrink:0}
+.bp-inputs{display:flex;align-items:center;gap:.22rem;flex-wrap:wrap}
+.bp-in{width:50px;padding:.28rem .3rem;border:1px solid var(--border);border-radius:6px;font-size:.82rem;text-align:center;background:var(--surface);color:var(--text);font-family:inherit;-moz-appearance:textfield}
+.bp-in::-webkit-inner-spin-button,.bp-in::-webkit-outer-spin-button{-webkit-appearance:none}
+.bp-in:focus{outline:2px solid var(--primary);border-color:transparent}
+.bp-pulse{width:44px}
+.bp-sep{color:var(--text-m);font-weight:600;font-size:.88rem;padding:0 .05rem}
+.bp-unit{font-size:.65rem;color:var(--text-l);white-space:nowrap;padding:0 .1rem}
 .free-day .icon{font-size:2.5rem;margin-bottom:.5rem}
 
 /* ── WEEK VIEW ───────────────────────────────────────── */
@@ -210,6 +231,7 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
     <button class="icon-btn" onclick="toggleSearch()" title="Suche">🔍</button>
     <button class="icon-btn" id="notif-btn" onclick="requestNotifs()" title="Erinnerungen">🔔</button>
     <button class="icon-btn" onclick="openAddAppt()" title="Termin hinzufügen">＋</button>
+    <button class="icon-btn" onclick="openBP()" title="Blutdrucktagebuch">💉</button>
     <button class="icon-btn" onclick="openImport()" title="Therapiekarte importieren">📥</button>
   </div>
 </header>
@@ -340,6 +362,16 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
 
     <button class="modal-btn secondary" style="margin-top:.75rem" onclick="clearCard()">Therapiekarte löschen</button>
     <button class="modal-btn secondary" onclick="closeModal('import-overlay')">Schließen</button>
+  </div>
+</div>
+
+<!-- Blutdrucktagebuch Modal -->
+<div class="overlay hidden" id="bp-overlay" onclick="closeModal('bp-overlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <div class="modal-title">💉 Blutdrucktagebuch</div>
+    <div id="bp-body"></div>
+    <button class="modal-btn secondary" style="margin-top:.75rem" onclick="closeModal('bp-overlay')">Schließen</button>
   </div>
 </div>
 
@@ -503,6 +535,7 @@ const S = {
   card: loadCard(),
   notifsScheduled: false,
   editingAppt: null,   // gesetzter Termin wird beim Speichern ersetzt statt neu angelegt
+  bpWeek: null,        // Montag der angezeigten BP-Woche
 };
 
 // ╔══════════════════════════════════════════════════════╗
@@ -982,6 +1015,90 @@ function clearCard() {
   closeModal('import-overlay');
   render();
   toast('🗑️ Therapiekarte gelöscht');
+}
+
+/* ── BLUTDRUCKTAGEBUCH ─────────────────────────────────── */
+function loadBP() {
+  try { const d = localStorage.getItem('reha_bp'); return d ? JSON.parse(d) : {}; }
+  catch { return {}; }
+}
+
+function saveBPVal(date, slot, field, val) {
+  const bp = loadBP();
+  if (!bp[date]) bp[date] = {};
+  if (!bp[date][slot]) bp[date][slot] = {};
+  const v = parseInt(val);
+  if (v > 0) bp[date][slot][field] = v;
+  else delete bp[date][slot][field];
+  if (!Object.keys(bp[date][slot]).length) delete bp[date][slot];
+  if (!Object.keys(bp[date]).length) delete bp[date];
+  localStorage.setItem('reha_bp', JSON.stringify(bp));
+}
+
+function openBP() {
+  S.bpWeek = getMonday(todayStr());
+  document.getElementById('bp-body').innerHTML = renderBPWeek();
+  openModal('bp-overlay');
+}
+
+function navBPWeek(offset) {
+  const d = parseDate(S.bpWeek);
+  d.setDate(d.getDate() + offset * 7);
+  S.bpWeek = dateStr(d);
+  document.getElementById('bp-body').innerHTML = renderBPWeek();
+}
+
+function renderBPWeek() {
+  const bp = loadBP();
+  const days = weekDays(S.bpWeek);
+  const mon = parseDate(days[0]), sun = parseDate(days[6]);
+  const sh = d => `${d.getDate()}.${d.getMonth()+1}.`;
+  const weekLabel = `${sh(mon)}–${sh(sun)} ${mon.getFullYear()}`;
+  const dayNames = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+  const today = todayStr();
+
+  let html = `
+    <div class="bp-nav">
+      <button onclick="navBPWeek(-1)">←</button>
+      <span>${weekLabel}</span>
+      <button onclick="navBPWeek(1)">→</button>
+    </div>
+    <div class="bp-week">`;
+
+  for (let i = 0; i < 7; i++) {
+    const date = days[i];
+    const data = bp[date] || {};
+    const d = parseDate(date);
+    const label = `${dayNames[i]}, ${d.getDate()}.${d.getMonth()+1}.`;
+    html += `
+      <div class="bp-day${date === today ? ' bp-today' : ''}">
+        <div class="bp-day-name">${label}</div>
+        ${renderBPSlot(date, 'am', data.am, '🌅', 'Morgens')}
+        ${renderBPSlot(date, 'pm', data.pm, '🌙', 'Abends')}
+      </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderBPSlot(date, slot, data, icon, label) {
+  const s = data?.sys ?? '', d = data?.dia ?? '', p = data?.pulse ?? '';
+  return `
+    <div class="bp-slot">
+      <span class="bp-slot-lbl">${icon} ${label}</span>
+      <div class="bp-inputs">
+        <input class="bp-in" type="number" placeholder="Sys" min="50" max="250" value="${s}"
+          onchange="saveBPVal('${date}','${slot}','sys',this.value)">
+        <span class="bp-sep">/</span>
+        <input class="bp-in" type="number" placeholder="Dia" min="30" max="160" value="${d}"
+          onchange="saveBPVal('${date}','${slot}','dia',this.value)">
+        <span class="bp-unit">mmHg</span>
+        &nbsp;💓&nbsp;
+        <input class="bp-in bp-pulse" type="number" placeholder="Puls" min="30" max="220" value="${p}"
+          onchange="saveBPVal('${date}','${slot}','pulse',this.value)">
+        <span class="bp-unit">/min</span>
+      </div>
+    </div>`;
 }
 
 // ╔══════════════════════════════════════════════════════╗
