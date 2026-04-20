@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Hintergrund: dunkelgrünes abgerundetes Quadrat -->
+  <rect width="512" height="512" rx="96" fill="#1b4332"/>
+
+  <!-- Baum: drei übereinander gestaffelte Dreiecke (Tannenbaum / 🌲) -->
+  <!-- Obere Spitze -->
+  <polygon points="256,52 176,196 336,196" fill="#95d5b2"/>
+  <!-- Mittlere Ebene -->
+  <polygon points="256,118 148,298 364,298" fill="#74c69d"/>
+  <!-- Untere Ebene -->
+  <polygon points="256,196 112,412 400,412" fill="#52b788"/>
+
+  <!-- Stamm -->
+  <rect x="220" y="408" width="72" height="72" rx="10" fill="#6d3b1f"/>
+</svg>
