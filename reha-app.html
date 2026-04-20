@@ -808,7 +808,15 @@ function renderKnowledge(q) {
       </button>
       <div class="acc-body">${itemsHtml}</div></div>`;
   }
-  return html + '</div></div>';
+  const exportBtn = S.card ? `
+    <div style="margin-top:1.25rem">
+      <button onclick="exportLastWeek()"
+        style="width:100%;padding:.8rem;background:var(--primary);color:#fff;border:none;border-radius:var(--r-sm);font-size:.92rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:opacity .15s"
+        onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        📄 Vorwoche als Bericht exportieren (.rtf)
+      </button>
+    </div>` : '';
+  return html + '</div>' + exportBtn + '</div>';
 }
 
 /* ── SEARCH ── */
@@ -1099,6 +1107,126 @@ function renderBPSlot(date, slot, data, icon, label) {
         <span class="bp-unit">/min</span>
       </div>
     </div>`;
+}
+
+/* ── RTF-EXPORT ─────────────────────────────────────────── */
+function getISOWeek(d) {
+  const t = new Date(d.getTime());
+  t.setHours(0,0,0,0);
+  t.setDate(t.getDate() + 4 - (t.getDay()||7));
+  const y = new Date(t.getFullYear(),0,1);
+  return Math.ceil((((t-y)/86400000)+1)/7);
+}
+
+function rtfEsc(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/[^\x00-\xFF]/g,'')          // Emojis & non-latin raus
+    .replace(/\\/g,'\\\\').replace(/\{/g,'\\{').replace(/\}/g,'\\}')
+    .replace(/ä/g,"\\'e4").replace(/ö/g,"\\'f6").replace(/ü/g,"\\'fc")
+    .replace(/Ä/g,"\\'c4").replace(/Ö/g,"\\'d6").replace(/Ü/g,"\\'dc")
+    .replace(/ß/g,"\\'df").replace(/–/g,'\\endash ').replace(/—/g,'\\emdash ');
+}
+
+function exportLastWeek() {
+  const today = parseDate(todayStr());
+  const dow = today.getDay() || 7;
+  const lastMon = new Date(today);
+  lastMon.setDate(today.getDate() - (dow - 1) - 7);
+  const days = weekDays(dateStr(lastMon));
+  const lastSun = parseDate(days[6]);
+  const kw = getISOWeek(lastMon);
+
+  const bp = loadBP();
+  const appts = (S.card?.appointments||[])
+    .filter(a => days.includes(a.date))
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+
+  const DN  = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+  const MN  = ["Januar","Februar","M\u00e4rz","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+  const di  = d => { const n=d.getDay(); return n===0?6:n-1; };
+  const fmtFull = ds => { const d=parseDate(ds); return `${DN[di(d)]}, ${d.getDate()}. ${MN[d.getMonth()]} ${d.getFullYear()}`; };
+  const fmtShort = ds => { const d=parseDate(ds); return `${d.getDate()}.${d.getMonth()+1}.`; };
+  const hr = `\\pard\\sb100\\sa100\\brdrb\\brdrs\\brdrw10\\brsp40 \\par\\pard\\sb0\\sa0 \\par\n`;
+
+  let r = `{\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat\n`;
+  r += `{\\fonttbl{\\f0\\fswiss\\fcharset0 Arial;}}\n`;
+  r += `{\\colortbl;\\red44\\green82\\blue44;\\red130\\green130\\blue130;}\n`;
+  r += `\\widowctrl\\margl1440\\margr1440\\margt1440\\margb1440\\f0\\fs22\\sa160\n\n`;
+
+  // Titel
+  r += `\\pard{\\b\\fs40 ${rtfEsc('Wochenbericht')}}\\par\n`;
+  r += `\\pard{\\b\\fs26\\cf1 ${rtfEsc('Klinik am Doniswald')}}\\par\n`;
+  r += `\\pard{\\fs20\\cf2 KW ${kw}:  ${rtfEsc(fmtShort(days[0])+'  bis  '+fmtShort(days[6])+' '+lastSun.getFullYear())}\\par}\n`;
+  r += `\\pard\\par\n`;
+  r += hr;
+
+  // Therapietermine
+  r += `\\pard{\\b\\fs30 ${rtfEsc('THERAPIETERMINE')}}\\par\n`;
+  r += `\\pard{\\fs18\\cf2 ${rtfEsc('Alle Termine inkl. manuell eingetragener Änderungen')}}\\par\n`;
+  r += `\\pard\\par\n`;
+
+  for (let i=0; i<7; i++) {
+    const date = days[i];
+    const dayAppts = appts.filter(a=>a.date===date);
+    r += `\\pard{\\b\\fs24 ${rtfEsc(fmtFull(date))}}\\par\n`;
+    if (!dayAppts.length) {
+      r += `\\pard\\li360{\\cf2\\i ${rtfEsc('Keine Therapietermine')}}\\par\n`;
+    } else {
+      for (const a of dayAppts) {
+        const end   = a.duration ? ` – ${addMinutes(a.time,a.duration)} Uhr` : '';
+        const typ   = a.reminder ? '  [Erinnerung]' : a.outdoor ? '  [Outdoor]' : '';
+        const who   = a.therapist ? `   |   ${a.therapist}` : '';
+        const where = a.room ? `   |   ${a.room}` : '';
+        const dur   = a.duration ? ` (${a.duration} Min)` : '';
+        r += `\\pard\\li360 {\\b ${rtfEsc(a.time+' Uhr'+end)}} ${rtfEsc('  '+a.title+dur+typ+who+where)}\\par\n`;
+      }
+    }
+    r += `\\pard\\sa60\\par\n`;
+  }
+  r += hr;
+
+  // Blutdrucktagebuch
+  r += `\\pard{\\b\\fs30 ${rtfEsc('BLUTDRUCKTAGEBUCH')}}\\par\n`;
+  r += `\\pard{\\fs18\\cf2 ${rtfEsc('Sys / Dia in mmHg   |   Puls in Schlägen pro Minute')}}\\par\n`;
+  r += `\\pard\\par\n`;
+
+  let hasAnyBP = false;
+  for (let i=0; i<7; i++) {
+    const date = days[i];
+    const d = parseDate(date);
+    const data = bp[date]||{};
+    if (data.am||data.pm) hasAnyBP = true;
+    const fmtV = sl => {
+      const s = data[sl];
+      if (!s||(!s.sys&&!s.dia)) return 'nicht gemessen';
+      return `${s.sys||'--'} / ${s.dia||'--'} mmHg`+(s.pulse?`   |   Puls: ${s.pulse} /min`:'');
+    };
+    r += `\\pard{\\b\\fs22 ${rtfEsc(DN[i]+',  '+d.getDate()+'.'+(d.getMonth()+1)+'.')}}\\par\n`;
+    r += `\\pard\\li360 ${rtfEsc('Morgens:   '+fmtV('am'))}\\par\n`;
+    r += `\\pard\\li360 ${rtfEsc('Abends:    '+fmtV('pm'))}\\par\n`;
+    r += `\\pard\\sa40\\par\n`;
+  }
+  if (!hasAnyBP) {
+    r += `\\pard{\\cf2\\i ${rtfEsc('Für diese Woche wurden keine Blutdruckwerte eingetragen.')}}\\par\n`;
+  }
+  r += hr;
+
+  // Fußzeile
+  const heute = new Date();
+  r += `\\pard{\\fs16\\cf2 ${rtfEsc('Erstellt am '+heute.getDate()+'.'+(heute.getMonth()+1)+'.'+heute.getFullYear()+' mit Reha-App · Klinik am Doniswald')}}\\par\n`;
+  r += `}`;
+
+  const blob = new Blob([r], {type:'application/rtf'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `wochenbericht-kw${kw}-${lastMon.getFullYear()}.rtf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('📄 Wochenbericht-KW' + kw + ' wird heruntergeladen…');
 }
 
 // ╔══════════════════════════════════════════════════════╗
