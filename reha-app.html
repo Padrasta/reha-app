@@ -1149,8 +1149,8 @@ function deleteAppt(data) {
   toast('🗑️ Termin gelöscht');
 }
 
-function getMonday(dateStr) {
-  const d = parseDate(dateStr);
+function getMonday(ds) {
+  const d = parseDate(ds);
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
