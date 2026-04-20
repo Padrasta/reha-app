@@ -502,9 +502,10 @@ const KNOWLEDGE = {
         { h:'Kleidung', t:'⚠️ Festes Schuhwerk und wetterfeste Kleidung mitbringen!' },
       ]},
     { icon:'🏢', title:'Studio K', cat:'Therapieorte',
-      keys:'studio k rathausstraße separates gebäude außengebäude',
+      keys:'studio k rathausstraße separates gebäude außengebäude königsfeld',
       items:[
         { h:'Lage', t:'Separates Gebäude auf der Rathausstraße, ca. 5–8 Minuten Fußweg.' },
+        { h:'Adresse', t:'Rathausstraße 9, 78126 Königsfeld im Schwarzwald', maps:'https://www.google.com/maps/search/?api=1&query=Rathausstra%C3%9Fe+9,+78126+K%C3%B6nigsfeld+im+Schwarzwald' },
         { h:'Typ', t:'Indoor / teilweise Outdoor.' },
         { h:'Hinweis', t:'Genügend Zeit für den Fußweg einplanen!' },
       ]},
@@ -794,6 +795,9 @@ function renderKnowledge(q) {
       } else if (it.mail) {
         val = `<a href="mailto:${it.mail}" style="color:var(--primary);text-decoration:none">
           ✉️ ${esc(it.t)}</a>`;
+      } else if (it.maps) {
+        val = `<a href="${it.maps}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none">
+          📍 ${esc(it.t)}</a>`;
       } else {
         val = esc(it.t);
       }
