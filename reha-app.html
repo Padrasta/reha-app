@@ -230,7 +230,9 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
 
 /* ── RESPONSIVE ──────────────────────────────────────── */
 @media(max-width:580px){
-  header{padding:.6rem .75rem}
+  header{padding:.6rem .75rem;flex-wrap:wrap;gap:.4rem .6rem}
+  .hdr-actions{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem}
+  .hdr-actions .icon-btn{width:100%}
   main{padding:.75rem}
   .date-nav .cur{font-size:.95rem}
 }
