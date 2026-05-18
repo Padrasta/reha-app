@@ -129,6 +129,21 @@ main{max-width:800px;margin:0 auto;padding:1rem}
 .bp-unit{font-size:.65rem;color:var(--text-l);white-space:nowrap;padding:0 .1rem}
 .free-day .icon{font-size:2.5rem;margin-bottom:.5rem}
 
+/* ── GEWICHTSTAGEBUCH ────────────────────────────────── */
+.wt-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
+.wt-nav button{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.35rem .75rem;cursor:pointer;font-size:.95rem;color:var(--text-m);transition:all .15s}
+.wt-nav button:hover{background:var(--primary-lt);color:var(--primary);border-color:var(--primary)}
+.wt-nav span{font-size:.88rem;font-weight:600;color:var(--text)}
+.wt-week{display:flex;flex-direction:column;gap:.45rem;max-height:58vh;overflow-y:auto;padding-right:.15rem}
+.wt-day{background:var(--bg);border-radius:var(--r-sm);padding:.6rem .75rem;display:flex;align-items:center;gap:.75rem}
+.wt-today{border:2px solid var(--primary)}
+.wt-day-name{font-size:.74rem;font-weight:700;color:var(--text-m);text-transform:uppercase;letter-spacing:.04em;flex:1}
+.wt-today .wt-day-name{color:var(--primary)}
+.wt-in{width:68px;padding:.28rem .3rem;border:1px solid var(--border);border-radius:6px;font-size:.88rem;text-align:center;background:var(--surface);color:var(--text);font-family:inherit;-moz-appearance:textfield}
+.wt-in::-webkit-inner-spin-button,.wt-in::-webkit-outer-spin-button{-webkit-appearance:none}
+.wt-in:focus{outline:2px solid var(--primary);border-color:transparent}
+.wt-unit{font-size:.72rem;color:var(--text-l)}
+
 /* ── WEEK VIEW ───────────────────────────────────────── */
 .week-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:.5rem}
 .week-grid{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:.5rem;min-width:910px}
@@ -234,6 +249,7 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
     <button class="icon-btn" id="notif-btn" onclick="requestNotifs()" title="Erinnerungen">🔔</button>
     <button class="icon-btn" onclick="openAddAppt()" title="Termin hinzufügen">＋</button>
     <button class="icon-btn" onclick="openBP()" title="Blutdrucktagebuch">💉</button>
+    <button class="icon-btn" onclick="openWeight()" title="Gewichtstagebuch">⚖️</button>
     <button class="icon-btn" onclick="openImport()" title="Therapiekarte importieren">📥</button>
   </div>
 </header>
@@ -374,6 +390,16 @@ pre.json-ex{font-size:.7rem;background:var(--bg);padding:.75rem;border-radius:8p
     <div class="modal-title">💉 Blutdrucktagebuch</div>
     <div id="bp-body"></div>
     <button class="modal-btn secondary" style="margin-top:.75rem" onclick="closeModal('bp-overlay')">Schließen</button>
+  </div>
+</div>
+
+<!-- Gewichtstagebuch Modal -->
+<div class="overlay hidden" id="wt-overlay" onclick="closeModal('wt-overlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="handle"></div>
+    <div class="modal-title">⚖️ Gewichtstagebuch</div>
+    <div id="wt-body"></div>
+    <button class="modal-btn secondary" style="margin-top:.75rem" onclick="closeModal('wt-overlay')">Schließen</button>
   </div>
 </div>
 
@@ -539,6 +565,7 @@ const S = {
   notifsScheduled: false,
   editingAppt: null,   // gesetzter Termin wird beim Speichern ersetzt statt neu angelegt
   bpWeek: null,        // Montag der angezeigten BP-Woche
+  weightWeek: null,    // Montag der angezeigten Gewichts-Woche
 };
 
 // ╔══════════════════════════════════════════════════════╗
@@ -1117,6 +1144,68 @@ function renderBPSlot(date, slot, data, icon, label) {
     </div>`;
 }
 
+/* ── GEWICHTSTAGEBUCH ─────────────────────────────────── */
+function loadWeight() {
+  try { const d = localStorage.getItem('reha_weight'); return d ? JSON.parse(d) : {}; }
+  catch { return {}; }
+}
+
+function saveWeightVal(date, val) {
+  const wt = loadWeight();
+  const v = parseFloat(val);
+  if (v > 0) wt[date] = v;
+  else delete wt[date];
+  localStorage.setItem('reha_weight', JSON.stringify(wt));
+}
+
+function openWeight() {
+  S.weightWeek = getMonday(todayStr());
+  document.getElementById('wt-body').innerHTML = renderWeightWeek();
+  openModal('wt-overlay');
+}
+
+function navWeightWeek(offset) {
+  const d = parseDate(S.weightWeek);
+  d.setDate(d.getDate() + offset * 7);
+  S.weightWeek = dateStr(d);
+  document.getElementById('wt-body').innerHTML = renderWeightWeek();
+}
+
+function renderWeightWeek() {
+  const wt = loadWeight();
+  const days = weekDays(S.weightWeek);
+  const mon = parseDate(days[0]), sun = parseDate(days[6]);
+  const sh = d => `${d.getDate()}.${d.getMonth()+1}.`;
+  const weekLabel = `${sh(mon)}–${sh(sun)} ${mon.getFullYear()}`;
+  const dayNames = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+  const today = todayStr();
+
+  let html = `
+    <div class="wt-nav">
+      <button onclick="navWeightWeek(-1)">←</button>
+      <span>${weekLabel}</span>
+      <button onclick="navWeightWeek(1)">→</button>
+    </div>
+    <p style="font-size:.78rem;color:var(--text-l);margin-bottom:.65rem">Morgens nüchtern, in kg</p>
+    <div class="wt-week">`;
+
+  for (let i = 0; i < 7; i++) {
+    const date = days[i];
+    const val = wt[date] != null ? wt[date] : '';
+    const d = parseDate(date);
+    const label = `${dayNames[i]}, ${d.getDate()}.${d.getMonth()+1}.`;
+    html += `
+      <div class="wt-day${date === today ? ' wt-today' : ''}">
+        <div class="wt-day-name">${label}</div>
+        <input class="wt-in" type="number" placeholder="0.0" min="30" max="300" step="0.1" value="${val}"
+          onchange="saveWeightVal('${date}', this.value)">
+        <span class="wt-unit">kg</span>
+      </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
 /* ── RTF-EXPORT ─────────────────────────────────────────── */
 function getISOWeek(d) {
   const t = new Date(d.getTime());
@@ -1224,6 +1313,27 @@ function exportWeek(mondayDs) {
   }
   if (!hasAnyBP) {
     r += `\\pard{\\cf2\\i ${rtfEsc('Für diese Woche wurden keine Blutdruckwerte eingetragen.')}}\\par\n`;
+  }
+  r += hr;
+
+  // Gewichtstagebuch
+  const wt = loadWeight();
+  r += `\\pard{\\b\\fs30 ${rtfEsc('GEWICHTSTAGEBUCH')}}\\par\n`;
+  r += `\\pard{\\fs18\\cf2 ${rtfEsc('Morgens nüchtern gemessenes Körpergewicht in kg')}}\\par\n`;
+  r += `\\pard\\par\n`;
+
+  let hasAnyWT = false;
+  for (let i=0; i<7; i++) {
+    const date = days[i];
+    const d = parseDate(date);
+    const val = wt[date];
+    if (val != null) hasAnyWT = true;
+    r += `\\pard{\\b\\fs22 ${rtfEsc(DN[i]+',  '+d.getDate()+'.'+(d.getMonth()+1)+'.')}}\\par\n`;
+    r += `\\pard\\li360 ${rtfEsc('Gewicht: '+(val != null ? val+' kg' : 'nicht eingetragen'))}\\par\n`;
+    r += `\\pard\\sa40\\par\n`;
+  }
+  if (!hasAnyWT) {
+    r += `\\pard{\\cf2\\i ${rtfEsc('Für diese Woche wurden keine Gewichtswerte eingetragen.')}}\\par\n`;
   }
   r += hr;
 
